@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market Survey Analysis Tool</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
@@ -174,6 +177,49 @@
             background: var(--bg-card);
             color: var(--accent-cyan);
             border-color: var(--accent-cyan);
+        }
+
+        /* Sync Status Indicator */
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.75rem;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--accent-emerald);
+            cursor: help;
+        }
+        
+        .sync-status.syncing {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--accent-blue);
+        }
+        
+        .sync-status.syncing .sync-icon {
+            animation: pulse 1s ease-in-out infinite;
+        }
+        
+        .sync-status.offline {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: var(--accent-amber);
+        }
+        
+        .sync-icon {
+            font-size: 0.9rem;
+        }
+        
+        .sync-text {
+            font-weight: 500;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         /* Survey Selector Styles - Compact in header */
@@ -1412,6 +1458,10 @@
                 </div>
             </div>
             <div class="header-actions">
+                <div class="sync-status" id="sync-status" title="Data syncs automatically across all devices">
+                    <span class="sync-icon">☁️</span>
+                    <span class="sync-text">Synced</span>
+                </div>
                 <div class="survey-selector-container">
                     <label class="survey-label">Market:</label>
                     <select id="survey-selector" class="survey-dropdown" onchange="handleSurveyChange(this.value)">
@@ -1739,6 +1789,23 @@
     </div>
 
     <script>
+        // ============ Firebase Configuration ============
+        const firebaseConfig = {
+            apiKey: "AIzaSyBeMwp-GzBLvHFQDIXPJdU6qwB-qqFxAnQ",
+            authDomain: "market-survey-tool.firebaseapp.com",
+            databaseURL: "https://market-survey-tool-default-rtdb.firebaseio.com",
+            projectId: "market-survey-tool",
+            storageBucket: "market-survey-tool.firebasestorage.app",
+            messagingSenderId: "978612443192",
+            appId: "1:978612443192:web:2602aae7e6ff3d8c2eaecd"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        let firebaseReady = false;
+        let firebaseListenerAttached = false;
+        
         // ============ Multi-Survey Management ============
         
         // Current survey ID
@@ -1811,10 +1878,26 @@
         
         const sampleMarketInstructions = `<div class="checklist-item"><input type="checkbox" class="checklist-checkbox"><span class="checklist-text" contenteditable="true">Check competitor websites for prelease updates</span></div><div class="checklist-item"><input type="checkbox" class="checklist-checkbox"><span class="checklist-text" contenteditable="true">Call properties without online data</span></div><div class="checklist-item"><input type="checkbox" class="checklist-checkbox"><span class="checklist-text" contenteditable="true">Update market averages if needed</span></div><div class="checklist-item"><input type="checkbox" class="checklist-checkbox"><span class="checklist-text" contenteditable="true">Export report and save to shared drive</span></div>`;
 
-        function initializeSurveys() {
+        async function initializeSurveys() {
+            // First, load from localStorage as immediate cache
             const savedSurveys = localStorage.getItem('msat-surveys');
             if (savedSurveys) {
                 surveys = JSON.parse(savedSurveys);
+            }
+            
+            // Try to load from Firebase (may have newer data from other devices)
+            try {
+                const firebaseData = await loadFromFirebase();
+                if (firebaseData) {
+                    // Merge Firebase data (newer) with local
+                    surveys = { ...surveys, ...firebaseData };
+                }
+                firebaseReady = true;
+                
+                // Start listening for real-time updates
+                attachFirebaseListener();
+            } catch (err) {
+                console.warn('Firebase initialization failed, using local storage only:', err);
             }
             
             // Always ensure Sample Market survey exists (read-only example)
@@ -1968,9 +2051,109 @@
             saveSurveysToStorage();
         }
         
-        // Save all surveys to localStorage
+        // Save all surveys to localStorage and Firebase
         function saveSurveysToStorage() {
+            // Always save to localStorage as backup/cache
             localStorage.setItem('msat-surveys', JSON.stringify(surveys));
+            
+            // Also save to Firebase for cross-device sync
+            saveToFirebase();
+        }
+        
+        // Update sync status indicator
+        function updateSyncStatus(status) {
+            const statusEl = document.getElementById('sync-status');
+            if (!statusEl) return;
+            
+            statusEl.classList.remove('syncing', 'offline');
+            
+            if (status === 'syncing') {
+                statusEl.classList.add('syncing');
+                statusEl.querySelector('.sync-icon').textContent = '🔄';
+                statusEl.querySelector('.sync-text').textContent = 'Syncing...';
+            } else if (status === 'offline') {
+                statusEl.classList.add('offline');
+                statusEl.querySelector('.sync-icon').textContent = '📴';
+                statusEl.querySelector('.sync-text').textContent = 'Offline';
+            } else {
+                statusEl.querySelector('.sync-icon').textContent = '☁️';
+                statusEl.querySelector('.sync-text').textContent = 'Synced';
+            }
+        }
+        
+        // Save surveys to Firebase
+        function saveToFirebase() {
+            if (!firebaseReady) {
+                updateSyncStatus('offline');
+                return;
+            }
+            
+            updateSyncStatus('syncing');
+            
+            // Filter out sample survey before saving to Firebase
+            const surveysToSave = {};
+            Object.keys(surveys).forEach(id => {
+                if (id !== '__sample__') {
+                    surveysToSave[id] = surveys[id];
+                }
+            });
+            
+            database.ref('surveys').set(surveysToSave)
+                .then(() => {
+                    updateSyncStatus('synced');
+                })
+                .catch(err => {
+                    console.warn('Firebase save failed:', err);
+                    updateSyncStatus('offline');
+                });
+        }
+        
+        // Load surveys from Firebase
+        function loadFromFirebase() {
+            return new Promise((resolve) => {
+                database.ref('surveys').once('value')
+                    .then(snapshot => {
+                        const data = snapshot.val();
+                        if (data) {
+                            resolve(data);
+                        } else {
+                            resolve(null);
+                        }
+                    })
+                    .catch(err => {
+                        console.warn('Firebase load failed:', err);
+                        resolve(null);
+                    });
+            });
+        }
+        
+        // Listen for real-time updates from Firebase
+        function attachFirebaseListener() {
+            if (firebaseListenerAttached) return;
+            firebaseListenerAttached = true;
+            
+            database.ref('surveys').on('value', snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    // Merge Firebase data with local surveys (keep sample)
+                    const sampleSurvey = surveys['__sample__'];
+                    surveys = { ...data };
+                    if (sampleSurvey) {
+                        surveys['__sample__'] = sampleSurvey;
+                    }
+                    
+                    // Update localStorage
+                    localStorage.setItem('msat-surveys', JSON.stringify(surveys));
+                    
+                    // Refresh UI if we have a current survey
+                    if (currentSurveyId && surveys[currentSurveyId]) {
+                        loadCurrentSurveyData();
+                        renderTable();
+                        updateReport();
+                        renderSurveyDropdown();
+                    }
+                }
+            });
         }
         
         // ============ URL Hash Routing ============
