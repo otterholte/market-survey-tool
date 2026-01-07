@@ -1344,6 +1344,43 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
         }
 
+        .delete-survey-confirm {
+            margin: 1.25rem 0;
+            padding: 1rem;
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            border-radius: 8px;
+        }
+
+        .confirm-checkbox-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .confirm-checkbox-label input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            accent-color: var(--accent-rose);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .confirm-checkbox-text {
+            font-size: 0.9rem;
+            color: var(--accent-rose);
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* Creator Credit */
         .creator-credit {
             text-align: center;
@@ -1672,11 +1709,17 @@
     <div class="modal-overlay" id="delete-survey-modal">
         <div class="modal-content">
             <div class="modal-icon">🗑️</div>
-            <h3 class="modal-title">Delete Survey?</h3>
+            <h3 class="modal-title">Delete Market Survey?</h3>
             <p class="modal-message" id="delete-survey-message">Are you sure you want to delete this survey? All data will be permanently lost.</p>
+            <div class="delete-survey-confirm">
+                <label class="confirm-checkbox-label">
+                    <input type="checkbox" id="delete-survey-checkbox" onchange="toggleDeleteSurveyButton()">
+                    <span class="confirm-checkbox-text">I understand this action is permanent and cannot be undone</span>
+                </label>
+            </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeDeleteSurveyModal()">Cancel</button>
-                <button class="btn btn-danger" onclick="confirmDeleteSurvey()">Delete</button>
+                <button class="btn btn-danger" id="delete-survey-btn" onclick="confirmDeleteSurvey()" disabled>Delete</button>
             </div>
         </div>
     </div>
@@ -2145,11 +2188,23 @@
             
             document.getElementById('delete-survey-message').innerHTML = 
                 `Are you sure you want to delete "<strong>${survey.name}</strong>"? All data will be permanently lost.`;
+            // Reset checkbox and button state
+            document.getElementById('delete-survey-checkbox').checked = false;
+            document.getElementById('delete-survey-btn').disabled = true;
             document.getElementById('delete-survey-modal').classList.add('show');
         }
         
         function closeDeleteSurveyModal() {
             document.getElementById('delete-survey-modal').classList.remove('show');
+            // Reset checkbox state
+            document.getElementById('delete-survey-checkbox').checked = false;
+            document.getElementById('delete-survey-btn').disabled = true;
+        }
+        
+        function toggleDeleteSurveyButton() {
+            const checkbox = document.getElementById('delete-survey-checkbox');
+            const deleteBtn = document.getElementById('delete-survey-btn');
+            deleteBtn.disabled = !checkbox.checked;
         }
         
         function confirmDeleteSurvey() {
