@@ -2428,9 +2428,9 @@
         };
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize multi-survey system
-            initializeSurveys();
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize multi-survey system (async - loads from Firebase)
+            await initializeSurveys();
             loadFromStorage(); // Handles migration
             renderAll();
             setupDataTableKeyboardNav();
