@@ -2721,12 +2721,67 @@
         });
 
         // Update Row Data
+        // Debounce timer for rendering
+        let renderDebounceTimer = null;
+        
         function updateRow(id, field, value) {
             const row = propertyData.find(r => r.id === id);
             if (row) {
                 row[field] = value;
-                renderAll();
+                
+                // Save immediately
                 saveToStorage();
+                
+                // Debounce the render to allow Tab/focus changes to complete first
+                if (renderDebounceTimer) {
+                    clearTimeout(renderDebounceTimer);
+                }
+                
+                renderDebounceTimer = setTimeout(() => {
+                    // Store current focus before render
+                    const activeEl = document.activeElement;
+                    let focusInfo = null;
+                    
+                    if (activeEl && activeEl.closest('#data-tbody')) {
+                        const tbody = document.getElementById('data-tbody');
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        const currentRow = activeEl.closest('tr');
+                        const rowIndex = rows.indexOf(currentRow);
+                        const cells = Array.from(currentRow.querySelectorAll('td'));
+                        const cell = activeEl.closest('td');
+                        const cellIndex = cells.indexOf(cell);
+                        const isSelect = activeEl.tagName === 'SELECT';
+                        const isTextarea = activeEl.tagName === 'TEXTAREA';
+                        
+                        focusInfo = { rowIndex, cellIndex, isSelect, isTextarea };
+                    }
+                    
+                    renderAll();
+                    
+                    // Restore focus after render
+                    if (focusInfo) {
+                        const tbody = document.getElementById('data-tbody');
+                        const rows = Array.from(tbody.querySelectorAll('tr'));
+                        if (rows[focusInfo.rowIndex]) {
+                            const cells = rows[focusInfo.rowIndex].querySelectorAll('td');
+                            if (cells[focusInfo.cellIndex]) {
+                                let input;
+                                if (focusInfo.isSelect) {
+                                    input = cells[focusInfo.cellIndex].querySelector('select');
+                                } else if (focusInfo.isTextarea) {
+                                    input = cells[focusInfo.cellIndex].querySelector('textarea');
+                                } else {
+                                    input = cells[focusInfo.cellIndex].querySelector('input');
+                                }
+                                if (input) {
+                                    input.focus();
+                                }
+                            }
+                        }
+                    }
+                    
+                    renderDebounceTimer = null;
+                }, 100);
             }
         }
 
