@@ -3646,6 +3646,9 @@
                 clearTimeout(saveDebounceTimer);
             }
             
+            // Show "syncing" status while waiting for debounce
+            updateSyncStatus('syncing');
+            
             // Schedule save after delay (2 seconds of no typing)
             saveDebounceTimer = setTimeout(() => {
                 saveCurrentSurveyData();
