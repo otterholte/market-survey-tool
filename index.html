@@ -1,0 +1,3566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Survey Analysis Tool</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #2d3341;
+            --bg-secondary: #363d4d;
+            --bg-tertiary: #424a5c;
+            --bg-card: #3a4252;
+            --accent-blue: #3b82f6;
+            --accent-blue-hover: #2563eb;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #4a5568;
+            --border-light: #5a6578;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --warning-bg: rgba(245, 158, 11, 0.2);
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-blue-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+        }
+
+        .tab.active {
+            color: var(--accent-cyan);
+        }
+
+        .tab.tab-instructions {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-left: 0.5rem;
+        }
+
+        .tab.tab-instructions:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border-color: var(--accent-cyan);
+        }
+
+        .tab.tab-instructions.active {
+            background: var(--bg-card);
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        /* Survey Selector Styles - Compact in header */
+        .survey-selector-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .survey-label {
+            font-weight: 500;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .survey-dropdown {
+            padding: 0.4rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 140px;
+        }
+
+        .survey-dropdown:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .survey-dropdown:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .survey-dropdown option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 0.5rem;
+        }
+
+        .survey-dropdown option[value="__add_new__"] {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        /* Context Menu for Survey */
+        .context-menu {
+            position: fixed;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            min-width: 160px;
+            padding: 0.5rem 0;
+            display: none;
+        }
+
+        .context-menu.show {
+            display: block;
+        }
+
+        .context-menu-item {
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.15s ease;
+        }
+
+        .context-menu-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .context-menu-item.danger {
+            color: var(--accent-rose);
+        }
+
+        .context-menu-item.danger:hover {
+            background: rgba(244, 63, 94, 0.15);
+        }
+
+        .context-menu-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 0.5rem 0;
+            background: var(--bg-secondary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-cyan);
+        }
+
+        .panel {
+            display: none;
+            background: var(--bg-secondary);
+            border-radius: 0 12px 12px 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .section-description {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Market Averages Grid */
+        .averages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            max-width: 900px;
+        }
+
+        .avg-card {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .avg-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+
+        .avg-card label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .avg-card input {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.5rem;
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 1.125rem;
+            text-align: center;
+        }
+
+        .avg-card input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+        }
+
+        /* Property Data Table */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        thead {
+            background: var(--bg-tertiary);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 1rem 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th[title] {
+            cursor: help;
+            position: relative;
+        }
+
+        th[title]:hover {
+            color: var(--text-primary);
+        }
+
+        td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr {
+            transition: background 0.15s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        tbody tr.uses-market-avg {
+            background: var(--warning-bg);
+        }
+
+        tbody tr.uses-market-avg:hover {
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        td input, td select {
+            width: 100%;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 0.5rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.875rem;
+        }
+
+        td input:focus, td select:focus {
+            outline: none;
+            background: var(--bg-tertiary);
+            border-color: var(--accent-blue);
+        }
+
+        td select {
+            cursor: pointer;
+        }
+
+        td select option {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .col-property { min-width: 160px; }
+        .col-floorplan { min-width: 130px; }
+        .col-beds { min-width: 90px; }
+        .col-units { min-width: 70px; text-align: center; }
+        .col-prelease { min-width: 90px; text-align: center; }
+        .col-effective { min-width: 90px; text-align: center; }
+        .col-total-beds { min-width: 80px; text-align: center; }
+        .col-override { min-width: 80px; text-align: center; }
+        .col-leased { min-width: 90px; text-align: center; font-weight: 600; position: relative; }
+        .col-notes { min-width: 150px; }
+
+        .leased-cell {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+
+        .leased-cell .source-indicator {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .notes-cell {
+            width: 100%;
+        }
+
+        .notes-input {
+            width: 100%;
+            resize: none;
+            overflow: hidden;
+            min-height: 1.8em;
+            line-height: 1.4;
+            padding: 0.4rem 0.5rem;
+            font-family: inherit;
+            font-size: inherit;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            color: var(--text-primary);
+            cursor: text;
+        }
+
+        .notes-input:focus {
+            outline: none;
+            background: var(--bg-tertiary);
+            border-color: var(--accent-blue);
+        }
+
+        .report-note {
+            cursor: pointer;
+            text-decoration: underline;
+            text-decoration-style: dotted;
+            text-decoration-color: var(--text-muted);
+            text-underline-offset: 2px;
+            transition: all 0.15s ease;
+        }
+
+        .report-note:hover {
+            color: var(--accent-cyan);
+            text-decoration-color: var(--accent-cyan);
+        }
+
+        /* Notes cell can expand row height */
+        #data-tbody tr td.col-notes {
+            vertical-align: top;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .effective-cell {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            white-space: nowrap;
+        }
+
+        .source-indicator.override {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+        }
+
+        .calculated {
+            font-family: 'Space Mono', monospace;
+            color: var(--accent-cyan);
+        }
+
+        .leased-value {
+            font-family: 'Space Mono', monospace;
+            color: var(--accent-emerald);
+            font-weight: 700;
+        }
+
+        .market-avg-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-amber);
+            border-radius: 50%;
+            margin-left: 0.25rem;
+        }
+
+        /* Report Section */
+        .report-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-card.highlight {
+            border-color: var(--accent-emerald);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.05));
+        }
+
+        .summary-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .summary-card.highlight .summary-value {
+            color: var(--accent-emerald);
+        }
+
+        /* Action Buttons */
+        .table-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-danger {
+            background: rgba(244, 63, 94, 0.2);
+            color: var(--accent-rose);
+            border: 1px solid var(--accent-rose);
+        }
+
+        .btn-danger:hover {
+            background: rgba(244, 63, 94, 0.3);
+        }
+
+        .btn-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-emerald);
+            border: 1px solid var(--accent-emerald);
+        }
+
+        .btn-success:hover {
+            background: rgba(16, 185, 129, 0.3);
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-color.market-avg {
+            background: var(--accent-amber);
+        }
+
+        .legend-color.custom {
+            background: var(--accent-blue);
+        }
+
+        .legend-color.override {
+            background: #a855f7;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--accent-emerald);
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-icon {
+            color: var(--accent-emerald);
+            font-size: 1.25rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Property Prelease Section */
+        .property-prelease-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .property-prelease-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .property-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            min-width: 200px;
+            max-width: 280px;
+            flex: 1;
+            transition: all 0.2s ease;
+        }
+
+        .property-card:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .property-card.has-prelease {
+            border-color: var(--accent-blue);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent);
+        }
+
+        .property-card.uses-market-avg {
+            border-color: var(--accent-amber);
+            background: var(--warning-bg);
+        }
+
+        .property-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .property-card-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .property-card-stats {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .property-card-input {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .property-card-input label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .property-card-input input {
+            width: 80px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.4rem 0.5rem;
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .property-card-input input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .property-card-input input::placeholder {
+            color: var(--text-muted);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+        }
+
+        .section-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 2rem 0;
+        }
+
+        .no-properties-msg {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-style: italic;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .table-bottom-actions {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+
+        .source-indicator {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            margin-left: 0.25rem;
+        }
+
+        .source-indicator.property {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .source-indicator.market {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-amber);
+        }
+
+        /* Report alternating property colors */
+        .report-row-group-a {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .report-row-group-b {
+            background: rgba(59, 130, 246, 0.12);
+        }
+
+        .report-row-group-a:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .report-row-group-b:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        /* Instructions Panel */
+
+        .editor-toolbar {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: #e5e7eb;
+            border: 1px solid #d1d5db;
+            border-bottom: none;
+            border-radius: 10px 10px 0 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 0.25rem;
+            padding-right: 0.75rem;
+            border-right: 1px solid #d1d5db;
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar-btn {
+            width: 32px;
+            height: 32px;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            color: #374151;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.15s ease;
+        }
+
+        .toolbar-btn:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .toolbar-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .color-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .color-btn.active {
+            border-color: white;
+            box-shadow: 0 0 0 2px var(--accent-blue);
+        }
+
+        .color-black { background: #1a202c; }
+        .color-white { background: #f1f5f9; border: 1px solid #d1d5db; }
+        .color-blue { background: var(--accent-blue); }
+        .color-cyan { background: var(--accent-cyan); }
+        .color-emerald { background: var(--accent-emerald); }
+        .color-amber { background: var(--accent-amber); }
+        .color-rose { background: var(--accent-rose); }
+
+        .toolbar-spacer {
+            flex: 1;
+        }
+
+        .dark-mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-label {
+            font-size: 0.8rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            display: inline-block;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #d1d5db;
+            border-radius: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-slider::before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--accent-blue);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(20px);
+        }
+
+        .instructions-editor {
+            min-height: 450px;
+            padding: 1.5rem;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 0 0 10px 10px;
+            color: #1a202c;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            outline: none;
+            max-width: 100%;
+            position: relative;
+            overflow: auto;
+        }
+
+        .instructions-container {
+            max-width: 1100px;
+        }
+
+        .instructions-editor:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .instructions-editor.dark-mode {
+            background: #1e2432;
+            color: #f1f5f9;
+            border-color: var(--border-color);
+        }
+
+        .instructions-editor.dark-mode .checklist-item {
+            border-bottom-color: var(--border-color);
+        }
+
+        .instructions-editor.dark-mode .checklist-checkbox {
+            background: var(--bg-tertiary);
+            border-color: var(--border-light);
+        }
+
+        .instructions-editor.dark-mode .checklist-text {
+            color: #f1f5f9;
+        }
+
+        .instructions-editor.dark-mode .checklist-text:empty::before {
+            color: var(--text-muted);
+        }
+
+        .instructions-editor.dark-mode .checklist-text.checked {
+            color: var(--text-muted);
+        }
+
+        /* Image handling in instructions */
+        .instructions-editor img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            cursor: move;
+            transition: box-shadow 0.15s ease;
+        }
+
+        .instructions-editor img:hover {
+            box-shadow: 0 0 0 2px var(--accent-blue);
+        }
+
+        .instructions-editor img.selected {
+            box-shadow: 0 0 0 3px var(--accent-blue);
+        }
+
+        .image-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 0.5rem 0;
+            cursor: grab;
+        }
+
+        .image-wrapper:active {
+            cursor: grabbing;
+        }
+
+        .image-wrapper img {
+            display: block;
+            margin: 0;
+            pointer-events: none;
+        }
+
+        .image-wrapper.selected {
+            outline: 3px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-blue);
+            border: 2px solid white;
+            border-radius: 2px;
+            cursor: nwse-resize;
+            z-index: 10;
+            display: none;
+        }
+
+        .image-wrapper.selected .resize-handle {
+            display: block;
+        }
+
+        .resize-handle.se {
+            bottom: -6px;
+            right: -6px;
+            cursor: nwse-resize;
+        }
+
+        .resize-handle.sw {
+            bottom: -6px;
+            left: -6px;
+            cursor: nesw-resize;
+        }
+
+        .resize-handle.ne {
+            top: -6px;
+            right: -6px;
+            cursor: nesw-resize;
+        }
+
+        .resize-handle.nw {
+            top: -6px;
+            left: -6px;
+            cursor: nwse-resize;
+        }
+
+        .image-size-label {
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            display: none;
+        }
+
+        .image-wrapper.resizing .image-size-label {
+            display: block;
+        }
+
+        .drop-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px dashed var(--accent-blue);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-blue);
+            font-weight: 600;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .instructions-editor.drag-over .drop-overlay {
+            opacity: 1;
+        }
+
+        .instructions-editor ul, .instructions-editor ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .instructions-editor li {
+            margin-bottom: 0.25rem;
+        }
+
+        .instructions-editor:empty::before {
+            content: 'Type your instructions here... Use the toolbar above to format text or add checklist items.';
+            color: #9ca3af;
+            pointer-events: none;
+        }
+
+        /* Checklist Styles */
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .checklist-item.indented {
+            margin-left: 2rem;
+        }
+
+        .checklist-checkbox {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            appearance: none;
+            background: #ffffff;
+            border: 2px solid #9ca3af;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 3px;
+        }
+
+        .checklist-checkbox:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .checklist-checkbox:checked {
+            background: var(--accent-emerald);
+            border-color: var(--accent-emerald);
+        }
+
+        .checklist-checkbox:checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .checklist-text {
+            flex: 1;
+            color: #1a202c;
+            outline: none;
+            min-height: 1.5em;
+        }
+
+        .checklist-text:empty::before {
+            content: 'Type here...';
+            color: #9ca3af;
+        }
+
+        .checklist-text.checked {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+
+        .checklist-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Delete Confirmation Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.2s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .modal-message {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .modal-actions .btn {
+            min-width: 100px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Creator Credit */
+        .creator-credit {
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .creator-credit a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        .creator-credit a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <div>
+                    <h1>Market Survey Analysis Tool</h1>
+                    <p>Student Housing Prelease Tracker</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="survey-selector-container">
+                    <label class="survey-label">Market:</label>
+                    <select id="survey-selector" class="survey-dropdown" onchange="handleSurveyChange(this.value)">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="exportToCSV()">
+                    <span>📥</span> Export CSV
+                </button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="data" onclick="switchTab('data', this)">Property Data</button>
+            <button class="tab" data-tab="averages" onclick="switchTab('averages', this)">Market Averages</button>
+            <button class="tab" data-tab="report" onclick="switchTab('report', this)">Leased Beds Report</button>
+            <button class="tab tab-instructions" data-tab="instructions" onclick="switchTab('instructions', this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Instructions
+            </button>
+        </div>
+
+        <!-- Property Data Panel -->
+        <div id="data-panel" class="panel active">
+            <!-- Property Prelease Section -->
+            <div class="property-prelease-section">
+                <h2 class="section-title">Property Prelease Percentages</h2>
+                <p class="section-description">Set a single prelease % for each property. All floorplans under that property will use this rate. Leave blank to use market averages.</p>
+                
+                <div class="property-prelease-grid" id="property-prelease-grid">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <h2 class="section-title">Floorplan Data Entry</h2>
+            <p class="section-description">Enter floorplan details. The prelease % is inherited from the property settings above.</p>
+            
+            <div class="table-actions">
+                <button class="btn btn-small btn-success" onclick="addRow()">+ Add Floorplan</button>
+            </div>
+
+            <div class="table-container">
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th class="col-property" title="The apartment complex or property name">Property Name</th>
+                            <th class="col-floorplan" title="Name of this specific floorplan type">Floorplan Name</th>
+                            <th class="col-beds" title="Number of bedrooms in this floorplan">Bedrooms</th>
+                            <th class="col-units" title="How many units of this floorplan exist">Units</th>
+                            <th class="col-effective" title="Prelease % used: P = Property-specific, M = Market average">Effective %</th>
+                            <th class="col-total-beds" title="Units × Bedrooms per unit">Total Beds</th>
+                            <th class="col-override" title="Manually set leased beds (overrides calculation)">Override</th>
+                            <th class="col-leased" title="Calculated or overridden leased beds. O = Override used">Leased Beds</th>
+                            <th class="col-notes" title="Optional notes about this floorplan">Notes</th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-tbody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-bottom-actions">
+                <button class="btn btn-success" onclick="addRow()">
+                    <span>+</span> Add Floorplan
+                </button>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color custom"></div>
+                    <span><strong>P</strong> = Property Prelease %</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color market-avg"></div>
+                    <span><strong>M</strong> = Market Average</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color override"></div>
+                    <span><strong>O</strong> = Manual Override</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Averages Panel -->
+        <div id="averages-panel" class="panel">
+            <h2 class="section-title">Market Average Prelease Percentages</h2>
+            <p class="section-description">Set the default prelease percentages for each bedroom type. These values are used when no property-specific percentage is entered.</p>
+            
+            <div class="averages-grid">
+                <div class="avg-card">
+                    <label>Studio</label>
+                    <input type="text" id="avg-studio" value="45%" onchange="updateMarketAverage('studio', this.value)">
+                </div>
+                <div class="avg-card">
+                    <label>1 Bedroom</label>
+                    <input type="text" id="avg-1br" value="50%" onchange="updateMarketAverage('1br', this.value)">
+                </div>
+                <div class="avg-card">
+                    <label>2 Bedroom</label>
+                    <input type="text" id="avg-2br" value="55%" onchange="updateMarketAverage('2br', this.value)">
+                </div>
+                <div class="avg-card">
+                    <label>3 Bedroom</label>
+                    <input type="text" id="avg-3br" value="60%" onchange="updateMarketAverage('3br', this.value)">
+                </div>
+                <div class="avg-card">
+                    <label>4 Bedroom</label>
+                    <input type="text" id="avg-4br" value="55%" onchange="updateMarketAverage('4br', this.value)">
+                </div>
+                <div class="avg-card">
+                    <label>5 Bedroom</label>
+                    <input type="text" id="avg-5br" value="50%" onchange="updateMarketAverage('5br', this.value)">
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Panel -->
+        <div id="report-panel" class="panel">
+            <h2 class="section-title">Leased Beds Summary Report</h2>
+            <p class="section-description">Auto-generated summary ready for copy/paste into your reports.</p>
+
+            <div class="report-summary">
+                <div class="summary-card">
+                    <div class="summary-label">Total Properties</div>
+                    <div class="summary-value" id="summary-properties">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Total Floorplans</div>
+                    <div class="summary-value" id="summary-floorplans">0</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Total Beds</div>
+                    <div class="summary-value" id="summary-beds">0</div>
+                </div>
+                <div class="summary-card highlight">
+                    <div class="summary-label">Leased Beds</div>
+                    <div class="summary-value" id="summary-leased">0</div>
+                </div>
+                <div class="summary-card highlight">
+                    <div class="summary-label">Overall Prelease</div>
+                    <div class="summary-value" id="summary-prelease">0%</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="report-table">
+                    <thead>
+                        <tr>
+                            <th title="The apartment complex or property name">Property Name</th>
+                            <th title="Name of this specific floorplan type">Floorplan</th>
+                            <th style="text-align: center;" title="Number of bedrooms per unit">Beds/Unit</th>
+                            <th style="text-align: center;" title="Units × Bedrooms per unit">Total Beds</th>
+                            <th style="text-align: center;" title="P = Property-specific, M = Market average, O = Override">Prelease %</th>
+                            <th style="text-align: center;" title="Estimated leased beds based on prelease %">Leased Beds</th>
+                            <th title="Notes about this floorplan">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Instructions Panel -->
+        <div id="instructions-panel" class="panel">
+            <div class="instructions-container">
+                <h2 class="section-title">Instructions & Weekly Checklist</h2>
+                <p class="section-description">Create instructions for your team. Use the checklist feature to track weekly tasks. Staff can check items off as they complete them.</p>
+
+                <div class="editor-toolbar">
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="execCmd('bold')" title="Bold"><b>B</b></button>
+                        <button class="toolbar-btn" onclick="execCmd('italic')" title="Italic"><i>I</i></button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="execCmd('insertUnorderedList')" title="Bullet List">•</button>
+                        <button class="toolbar-btn" onclick="execCmd('insertOrderedList')" title="Numbered List">1.</button>
+                        <button class="toolbar-btn" onclick="addChecklistItem()" title="Add Checklist Item">☑</button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="triggerImageUpload()" title="Add Image"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+                        <input type="file" id="image-upload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="color-btn color-black" onclick="setTextColor('#1a202c')" title="Black"></button>
+                        <button class="color-btn color-blue" onclick="setTextColor('#3b82f6')" title="Blue"></button>
+                        <button class="color-btn color-cyan" onclick="setTextColor('#06b6d4')" title="Cyan"></button>
+                        <button class="color-btn color-emerald" onclick="setTextColor('#10b981')" title="Green"></button>
+                        <button class="color-btn color-amber" onclick="setTextColor('#f59e0b')" title="Amber"></button>
+                        <button class="color-btn color-rose" onclick="setTextColor('#f43f5e')" title="Rose"></button>
+                    </div>
+                    <div class="toolbar-spacer"></div>
+                    <div class="dark-mode-toggle">
+                        <label class="toggle-switch" title="Toggle Dark Mode">
+                            <input type="checkbox" id="editor-dark-mode" onchange="toggleEditorDarkMode()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label">Dark</span>
+                    </div>
+                </div>
+
+                <div class="instructions-editor" id="instructions-editor" contenteditable="true" 
+                    oninput="saveInstructions()"
+                    onkeydown="handleEditorKeydown(event)"
+                    onpaste="handleImagePaste(event)"
+                    ondrop="handleImageDrop(event)"
+                    ondragover="event.preventDefault()">
+                </div>
+
+                <div class="checklist-actions">
+                    <button class="btn btn-secondary" onclick="clearAllChecks()">
+                        <span>🔄</span> Clear All Checks
+                    </button>
+                    <button class="btn btn-danger btn-small" onclick="clearInstructions()">
+                        Clear All Content
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="creator-credit">
+            Created by <strong>Eli Otterholt</strong>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal-content">
+            <div class="modal-icon">🗑️</div>
+            <h3 class="modal-title">Delete Floorplan?</h3>
+            <p class="modal-message" id="delete-modal-message">Are you sure you want to delete this floorplan? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear Instructions Modal -->
+    <div class="modal-overlay" id="clear-instructions-modal">
+        <div class="modal-content">
+            <div class="modal-icon">📝</div>
+            <h3 class="modal-title">Clear All Instructions?</h3>
+            <p class="modal-message">Are you sure you want to clear all instructions and checklist items? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeClearInstructionsModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmClearInstructions()">Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <span class="toast-icon">✓</span>
+        <span id="toast-message">Copied to clipboard!</span>
+    </div>
+
+    <!-- Survey Context Menu -->
+    <div class="context-menu" id="survey-context-menu">
+        <div class="context-menu-item" onclick="renameSurvey()">
+            <span>✏️</span> Rename Survey
+        </div>
+        <div class="context-menu-item" onclick="duplicateSurvey()">
+            <span>📋</span> Duplicate Survey
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item danger" onclick="deleteSurveyPrompt()">
+            <span>🗑️</span> Delete Survey
+        </div>
+    </div>
+
+    <!-- Rename Survey Modal -->
+    <div class="modal-overlay" id="rename-survey-modal">
+        <div class="modal-content">
+            <div class="modal-icon">✏️</div>
+            <h3 class="modal-title">Rename Survey</h3>
+            <p class="modal-message">Enter a new name for this survey:</p>
+            <input type="text" id="rename-survey-input" class="modal-input" placeholder="Survey name" />
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeRenameSurveyModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmRenameSurvey()">Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Survey Modal -->
+    <div class="modal-overlay" id="delete-survey-modal">
+        <div class="modal-content">
+            <div class="modal-icon">🗑️</div>
+            <h3 class="modal-title">Delete Survey?</h3>
+            <p class="modal-message" id="delete-survey-message">Are you sure you want to delete this survey? All data will be permanently lost.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeDeleteSurveyModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDeleteSurvey()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Survey Modal -->
+    <div class="modal-overlay" id="new-survey-modal">
+        <div class="modal-content">
+            <div class="modal-icon">📊</div>
+            <h3 class="modal-title">Create New Survey</h3>
+            <p class="modal-message">Enter a name for the new survey:</p>
+            <input type="text" id="new-survey-input" class="modal-input" placeholder="Survey name" />
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeNewSurveyModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmNewSurvey()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ Multi-Survey Management ============
+        
+        // Current survey ID
+        let currentSurveyId = null;
+        let surveys = {}; // { id: { name, slug, data, averages, prelease, instructions } }
+        
+        // Default market averages
+        const defaultMarketAverages = {
+            studio: 0.45,
+            '1br': 0.50,
+            '2br': 0.55,
+            '3br': 0.60,
+            '4br': 0.55,
+            '5br': 0.50
+        };
+        
+        // Current survey data (loaded from surveys object)
+        let propertyData = [];
+        let propertyPrelease = {}; // { "Property Name": 52, "Another Property": null }
+        let marketAverages = { ...defaultMarketAverages };
+
+        // Bedroom type mappings
+        const bedroomOptions = ['Studio', '1 BR', '2 BR', '3 BR', '4 BR', '5 BR'];
+        const bedsPerType = {
+            'Studio': 1,
+            '1 BR': 1,
+            '2 BR': 2,
+            '3 BR': 3,
+            '4 BR': 4,
+            '5 BR': 5
+        };
+        
+        // Generate unique ID
+        function generateId() {
+            return 'survey_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Generate URL-friendly slug
+        function generateSlug(name) {
+            return name.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '') || 'survey';
+        }
+        
+        // Initialize surveys system
+        // Sample data for the permanent Sample Market survey
+        const sampleMarketData = [
+            { id: 1, property: 'The Retreat', floorplan: 'Studio A', bedrooms: 'Studio', units: 24, override: null, notes: '' },
+            { id: 2, property: 'The Retreat', floorplan: '1BR Classic', bedrooms: '1 BR', units: 36, override: null, notes: '' },
+            { id: 3, property: 'The Retreat', floorplan: '2BR Standard', bedrooms: '2 BR', units: 48, override: null, notes: '' },
+            { id: 4, property: 'The Retreat', floorplan: '2BR Deluxe', bedrooms: '2 BR', units: 24, override: null, notes: '' },
+            { id: 5, property: 'The Retreat', floorplan: '3BR Suite', bedrooms: '3 BR', units: 32, override: null, notes: '' },
+            { id: 6, property: 'Campus Edge', floorplan: 'Studio', bedrooms: 'Studio', units: 20, override: null, notes: '' },
+            { id: 7, property: 'Campus Edge', floorplan: '1BR', bedrooms: '1 BR', units: 40, override: null, notes: '' },
+            { id: 8, property: 'Campus Edge', floorplan: '2BR Shared', bedrooms: '2 BR', units: 60, override: null, notes: '' },
+            { id: 9, property: 'Campus Edge', floorplan: '2BR Private', bedrooms: '2 BR', units: 30, override: null, notes: '' },
+            { id: 10, property: 'Campus Edge', floorplan: '3BR', bedrooms: '3 BR', units: 48, override: null, notes: '' },
+            { id: 11, property: 'Campus Edge', floorplan: '4BR', bedrooms: '4 BR', units: 24, override: null, notes: '' },
+            { id: 12, property: 'University Lofts', floorplan: 'Micro Studio', bedrooms: 'Studio', units: 16, override: 16, notes: 'Fully leased per website' },
+            { id: 13, property: 'University Lofts', floorplan: '1BR Loft', bedrooms: '1 BR', units: 32, override: null, notes: '' },
+            { id: 14, property: 'University Lofts', floorplan: '2BR Townhome', bedrooms: '2 BR', units: 40, override: null, notes: '' },
+            { id: 15, property: 'University Lofts', floorplan: '3BR Townhome', bedrooms: '3 BR', units: 20, override: null, notes: '' }
+        ];
+        
+        const sampleMarketPrelease = {
+            'The Retreat': 52,
+            'Campus Edge': null,
+            'University Lofts': 48
+        };
+        
+        const sampleMarketInstructions = `<div class="checklist-item"><input type="checkbox" class="checklist-checkbox"><span class="checklist-text" contenteditable="true">Check competitor websites for prelease updates</span></div><div class="checklist-item"><input type="checkbox" class="checklist-checkbox"><span class="checklist-text" contenteditable="true">Call properties without online data</span></div><div class="checklist-item"><input type="checkbox" class="checklist-checkbox"><span class="checklist-text" contenteditable="true">Update market averages if needed</span></div><div class="checklist-item"><input type="checkbox" class="checklist-checkbox"><span class="checklist-text" contenteditable="true">Export report and save to shared drive</span></div>`;
+
+        function initializeSurveys() {
+            const savedSurveys = localStorage.getItem('msat-surveys');
+            if (savedSurveys) {
+                surveys = JSON.parse(savedSurveys);
+            }
+            
+            // Always ensure Sample Market survey exists (read-only example)
+            // Also update name in case it has old icon
+            if (!surveys['__sample__']) {
+                surveys['__sample__'] = {
+                    name: 'Sample Market',
+                    slug: 'sample-market',
+                    data: JSON.parse(JSON.stringify(sampleMarketData)),
+                    averages: { ...defaultMarketAverages },
+                    prelease: { ...sampleMarketPrelease },
+                    instructions: sampleMarketInstructions,
+                    darkMode: false,
+                    isSample: true
+                };
+            } else {
+                // Update name to remove icon if it exists
+                surveys['__sample__'].name = 'Sample Market';
+            }
+            
+            // If no user surveys exist (only sample), create a default one
+            const userSurveys = Object.keys(surveys).filter(id => id !== '__sample__');
+            if (userSurveys.length === 0) {
+                const defaultId = generateId();
+                surveys[defaultId] = {
+                    name: 'My Market Survey',
+                    slug: 'my-market-survey',
+                    data: [],
+                    averages: { ...defaultMarketAverages },
+                    prelease: {},
+                    instructions: '',
+                    darkMode: false
+                };
+            }
+            
+            saveSurveysToStorage();
+            
+            // Render survey dropdown
+            renderSurveyDropdown();
+            
+            // Load from URL hash or use first user survey (not sample)
+            loadFromUrlHash();
+        }
+        
+        // Render survey dropdown
+        function renderSurveyDropdown() {
+            const select = document.getElementById('survey-selector');
+            select.innerHTML = '';
+            
+            // Add user surveys first
+            Object.entries(surveys).forEach(([id, survey]) => {
+                if (id === '__sample__') return; // Skip sample for now
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = survey.name;
+                if (id === currentSurveyId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+            
+            // Add Sample Market with subtle styling
+            if (surveys['__sample__']) {
+                const sampleOption = document.createElement('option');
+                sampleOption.value = '__sample__';
+                sampleOption.textContent = surveys['__sample__'].name;
+                sampleOption.style.color = '#94a3b8';
+                sampleOption.style.fontStyle = 'italic';
+                if (currentSurveyId === '__sample__') {
+                    sampleOption.selected = true;
+                }
+                select.appendChild(sampleOption);
+            }
+            
+            // Add "Add Market Survey" option with green styling
+            const addOption = document.createElement('option');
+            addOption.value = '__add_new__';
+            addOption.textContent = '+ Add Market Survey';
+            addOption.style.color = '#10b981';
+            addOption.style.fontWeight = '600';
+            addOption.style.background = 'rgba(16, 185, 129, 0.15)';
+            select.appendChild(addOption);
+        }
+        
+        // Handle survey dropdown change (including add new)
+        function handleSurveyChange(value) {
+            if (value === '__add_new__') {
+                // Reset to current survey in dropdown
+                document.getElementById('survey-selector').value = currentSurveyId;
+                addNewSurvey();
+            } else {
+                switchSurvey(value);
+            }
+        }
+        
+        // Switch to a different survey
+        function switchSurvey(surveyId) {
+            if (!surveys[surveyId]) return;
+            
+            // Save current survey first
+            if (currentSurveyId) {
+                saveCurrentSurveyData();
+            }
+            
+            currentSurveyId = surveyId;
+            loadCurrentSurveyData();
+            renderAll();
+            updateUrlHash();
+        }
+        
+        // Load current survey data into working variables
+        function loadCurrentSurveyData() {
+            const survey = surveys[currentSurveyId];
+            if (!survey) return;
+            
+            propertyData = survey.data || [];
+            marketAverages = survey.averages || { ...defaultMarketAverages };
+            propertyPrelease = survey.prelease || {};
+            
+            // Update market averages UI
+            Object.keys(marketAverages).forEach(key => {
+                const input = document.getElementById(`avg-${key}`);
+                if (input) {
+                    input.value = (marketAverages[key] * 100).toFixed(0) + '%';
+                }
+            });
+            
+            // Load instructions
+            const editor = document.getElementById('instructions-editor');
+            editor.innerHTML = survey.instructions || '';
+            initializeLoadedImages();
+            
+            // Load dark mode preference
+            const darkModeCheckbox = document.getElementById('editor-dark-mode');
+            if (darkModeCheckbox) {
+                darkModeCheckbox.checked = survey.darkMode || false;
+                toggleEditorDarkMode();
+            }
+        }
+        
+        // Save current survey data from working variables
+        function saveCurrentSurveyData() {
+            if (!currentSurveyId || !surveys[currentSurveyId]) return;
+            
+            surveys[currentSurveyId].data = propertyData;
+            surveys[currentSurveyId].averages = marketAverages;
+            surveys[currentSurveyId].prelease = propertyPrelease;
+            surveys[currentSurveyId].instructions = document.getElementById('instructions-editor').innerHTML;
+            surveys[currentSurveyId].darkMode = document.getElementById('editor-dark-mode')?.checked || false;
+            
+            saveSurveysToStorage();
+        }
+        
+        // Save all surveys to localStorage
+        function saveSurveysToStorage() {
+            localStorage.setItem('msat-surveys', JSON.stringify(surveys));
+        }
+        
+        // ============ URL Hash Routing ============
+        
+        function updateUrlHash() {
+            if (!currentSurveyId || !surveys[currentSurveyId]) return;
+            
+            const survey = surveys[currentSurveyId];
+            const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'data';
+            const hash = `#/${survey.slug}/${activeTab}`;
+            
+            if (window.location.hash !== hash) {
+                history.pushState(null, '', hash);
+            }
+        }
+        
+        function loadFromUrlHash() {
+            const hash = window.location.hash;
+            let surveySlug = null;
+            let tabName = 'data';
+            
+            if (hash && hash.startsWith('#/')) {
+                const parts = hash.slice(2).split('/');
+                surveySlug = parts[0] || null;
+                tabName = parts[1] || 'data';
+            }
+            
+            // Find survey by slug
+            let foundSurveyId = null;
+            if (surveySlug) {
+                for (const [id, survey] of Object.entries(surveys)) {
+                    if (survey.slug === surveySlug) {
+                        foundSurveyId = id;
+                        break;
+                    }
+                }
+            }
+            
+            // If no survey found by slug, use first user survey (not sample)
+            if (!foundSurveyId) {
+                foundSurveyId = Object.keys(surveys).find(id => id !== '__sample__') || '__sample__';
+            }
+            
+            currentSurveyId = foundSurveyId;
+            loadCurrentSurveyData();
+            renderSurveyDropdown();
+            
+            // Switch to the tab from URL
+            const validTabs = ['data', 'averages', 'report', 'instructions'];
+            if (validTabs.includes(tabName)) {
+                const tabBtn = document.querySelector(`.tab[data-tab="${tabName}"]`);
+                if (tabBtn) {
+                    switchTab(tabName, tabBtn, false); // false = don't update URL yet
+                }
+            }
+            
+            updateUrlHash();
+        }
+        
+        // Listen for hash changes (browser back/forward)
+        window.addEventListener('hashchange', loadFromUrlHash);
+        
+        // ============ Survey CRUD Operations ============
+        
+        function addNewSurvey() {
+            document.getElementById('new-survey-input').value = '';
+            document.getElementById('new-survey-modal').classList.add('show');
+            document.getElementById('new-survey-input').focus();
+        }
+        
+        function closeNewSurveyModal() {
+            document.getElementById('new-survey-modal').classList.remove('show');
+        }
+        
+        function confirmNewSurvey() {
+            const name = document.getElementById('new-survey-input').value.trim();
+            if (!name) {
+                showToast('Please enter a survey name');
+                return;
+            }
+            
+            // Save current survey first
+            saveCurrentSurveyData();
+            
+            const newId = generateId();
+            surveys[newId] = {
+                name: name,
+                slug: generateSlug(name),
+                data: [],
+                averages: { ...defaultMarketAverages },
+                prelease: {},
+                instructions: '',
+                darkMode: false
+            };
+            
+            saveSurveysToStorage();
+            closeNewSurveyModal();
+            
+            // Switch to new survey
+            switchSurvey(newId);
+            renderSurveyDropdown();
+            showToast('Survey created!');
+        }
+        
+        // Context menu for survey dropdown
+        let contextMenuSurveyId = null;
+        
+        document.getElementById('survey-selector').addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            contextMenuSurveyId = e.target.value || currentSurveyId;
+            
+            const menu = document.getElementById('survey-context-menu');
+            menu.style.left = e.clientX + 'px';
+            menu.style.top = e.clientY + 'px';
+            menu.classList.add('show');
+        });
+        
+        // Close context menu on click elsewhere
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('survey-context-menu');
+            if (!menu.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+        });
+        
+        function renameSurvey() {
+            document.getElementById('survey-context-menu').classList.remove('show');
+            const surveyId = contextMenuSurveyId || currentSurveyId;
+            
+            // Can't rename sample survey
+            if (surveyId === '__sample__') {
+                showToast('Cannot rename the sample survey');
+                return;
+            }
+            
+            const survey = surveys[surveyId];
+            if (!survey) return;
+            
+            document.getElementById('rename-survey-input').value = survey.name;
+            document.getElementById('rename-survey-modal').classList.add('show');
+            document.getElementById('rename-survey-input').focus();
+            document.getElementById('rename-survey-input').select();
+        }
+        
+        function closeRenameSurveyModal() {
+            document.getElementById('rename-survey-modal').classList.remove('show');
+        }
+        
+        function confirmRenameSurvey() {
+            const newName = document.getElementById('rename-survey-input').value.trim();
+            if (!newName) {
+                showToast('Please enter a survey name');
+                return;
+            }
+            
+            const surveyId = contextMenuSurveyId || currentSurveyId;
+            if (surveys[surveyId]) {
+                surveys[surveyId].name = newName;
+                surveys[surveyId].slug = generateSlug(newName);
+                saveSurveysToStorage();
+                renderSurveyDropdown();
+                updateUrlHash();
+                showToast('Survey renamed!');
+            }
+            
+            closeRenameSurveyModal();
+        }
+        
+        function duplicateSurvey() {
+            document.getElementById('survey-context-menu').classList.remove('show');
+            const sourceSurveyId = contextMenuSurveyId || currentSurveyId;
+            const sourceSurvey = surveys[sourceSurveyId];
+            if (!sourceSurvey) return;
+            
+            saveCurrentSurveyData();
+            
+            const newId = generateId();
+            const newName = sourceSurvey.name + ' (Copy)';
+            surveys[newId] = {
+                name: newName,
+                slug: generateSlug(newName),
+                data: JSON.parse(JSON.stringify(sourceSurvey.data)),
+                averages: { ...sourceSurvey.averages },
+                prelease: { ...sourceSurvey.prelease },
+                instructions: sourceSurvey.instructions,
+                darkMode: sourceSurvey.darkMode
+            };
+            
+            saveSurveysToStorage();
+            switchSurvey(newId);
+            renderSurveyDropdown();
+            showToast('Survey duplicated!');
+        }
+        
+        function deleteSurveyPrompt() {
+            document.getElementById('survey-context-menu').classList.remove('show');
+            
+            const surveyId = contextMenuSurveyId || currentSurveyId;
+            
+            // Can't delete sample survey
+            if (surveyId === '__sample__') {
+                showToast('Cannot delete the sample survey');
+                return;
+            }
+            
+            // Don't allow deleting if it's the only user survey
+            const userSurveys = Object.keys(surveys).filter(id => id !== '__sample__');
+            if (userSurveys.length <= 1) {
+                showToast('Cannot delete your only survey');
+                return;
+            }
+            
+            const survey = surveys[surveyId];
+            if (!survey) return;
+            
+            document.getElementById('delete-survey-message').innerHTML = 
+                `Are you sure you want to delete "<strong>${survey.name}</strong>"? All data will be permanently lost.`;
+            document.getElementById('delete-survey-modal').classList.add('show');
+        }
+        
+        function closeDeleteSurveyModal() {
+            document.getElementById('delete-survey-modal').classList.remove('show');
+        }
+        
+        function confirmDeleteSurvey() {
+            const surveyId = contextMenuSurveyId || currentSurveyId;
+            
+            // Can't delete sample survey
+            if (surveyId === '__sample__') {
+                showToast('Cannot delete the sample survey');
+                closeDeleteSurveyModal();
+                return;
+            }
+            
+            const userSurveys = Object.keys(surveys).filter(id => id !== '__sample__');
+            if (userSurveys.length <= 1) {
+                showToast('Cannot delete your only survey');
+                closeDeleteSurveyModal();
+                return;
+            }
+            
+            delete surveys[surveyId];
+            saveSurveysToStorage();
+            
+            // Switch to first available user survey (not sample)
+            const firstUserSurveyId = Object.keys(surveys).find(id => id !== '__sample__');
+            switchSurvey(firstUserSurveyId);
+            renderSurveyDropdown();
+            
+            closeDeleteSurveyModal();
+            showToast('Survey deleted!');
+        }
+        const avgKeyMap = {
+            'Studio': 'studio',
+            '1 BR': '1br',
+            '2 BR': '2br',
+            '3 BR': '3br',
+            '4 BR': '4br',
+            '5 BR': '5br'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize multi-survey system
+            initializeSurveys();
+            loadFromStorage(); // Handles migration
+            renderAll();
+            setupDataTableKeyboardNav();
+        });
+
+        // Render all components
+        function renderAll() {
+            renderPropertyPreleaseCards();
+            renderDataTable();
+            updateReport();
+            // Re-setup keyboard nav and textarea heights after render
+            setTimeout(() => {
+                setupDataTableKeyboardNav();
+                initTextareaHeights();
+            }, 0);
+        }
+
+        // Setup keyboard navigation for data table
+        function setupDataTableKeyboardNav() {
+            const tbody = document.getElementById('data-tbody');
+            if (!tbody) return;
+
+            const inputs = tbody.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('keydown', handleDataTableKeydown);
+            });
+        }
+
+        // Handle keydown in data table
+        function handleDataTableKeydown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                
+                const currentInput = event.target;
+                const currentRow = currentInput.closest('tr');
+                const currentCell = currentInput.closest('td');
+                const tbody = document.getElementById('data-tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const currentRowIndex = rows.indexOf(currentRow);
+                const cells = Array.from(currentRow.querySelectorAll('td'));
+                const currentCellIndex = cells.indexOf(currentCell);
+                
+                // Move to same cell in next row (if not last row)
+                if (currentRowIndex < rows.length - 1) {
+                    const nextRow = rows[currentRowIndex + 1];
+                    if (nextRow) {
+                        const nextCells = nextRow.querySelectorAll('td');
+                        if (nextCells[currentCellIndex]) {
+                            const nextInput = nextCells[currentCellIndex].querySelector('input, select');
+                            if (nextInput) {
+                                nextInput.focus();
+                                if (nextInput.select) nextInput.select();
+                            }
+                        }
+                    }
+                }
+                // If on last row, do nothing - user can Tab to Add Floorplan button
+            }
+        }
+
+        // Tab Switching
+        function switchTab(tabName, element, updateUrl = true) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            
+            element.classList.add('active');
+            document.getElementById(`${tabName}-panel`).classList.add('active');
+            
+            if (tabName === 'report') {
+                updateReport();
+            }
+            
+            // Update URL hash
+            if (updateUrl) {
+                updateUrlHash();
+            }
+        }
+
+        // Market Averages
+        function updateMarketAverage(type, value) {
+            const numValue = parseFloat(value.replace('%', '')) / 100;
+            if (!isNaN(numValue) && numValue >= 0 && numValue <= 1) {
+                marketAverages[type] = numValue;
+                document.getElementById(`avg-${type}`).value = (numValue * 100).toFixed(0) + '%';
+                saveToStorage();
+                renderDataTable();
+            }
+        }
+
+        // Get unique property names from data
+        function getUniqueProperties() {
+            const properties = [...new Set(propertyData.filter(r => r.property).map(r => r.property))];
+            return properties.sort();
+        }
+
+        // Update property prelease percentage
+        function updatePropertyPrelease(propertyName, value) {
+            if (value === '' || value === null) {
+                propertyPrelease[propertyName] = null;
+            } else {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+                    propertyPrelease[propertyName] = numValue;
+                }
+            }
+            saveToStorage();
+            renderAll();
+        }
+
+        // Render Property Prelease Cards
+        function renderPropertyPreleaseCards() {
+            const grid = document.getElementById('property-prelease-grid');
+            const properties = getUniqueProperties();
+            
+            if (properties.length === 0) {
+                grid.innerHTML = `<div class="no-properties-msg">Add floorplans below to see properties here. Each unique property name will appear as a card where you can set its prelease %.</div>`;
+                return;
+            }
+
+            grid.innerHTML = properties.map(propName => {
+                const floorplanCount = propertyData.filter(r => r.property === propName).length;
+                const prelease = propertyPrelease[propName];
+                const hasPrelease = prelease !== null && prelease !== undefined;
+                const cardClass = hasPrelease ? 'has-prelease' : 'uses-market-avg';
+                
+                return `
+                    <div class="property-card ${cardClass}">
+                        <div class="property-card-header">
+                            <span class="property-card-name">${propName}</span>
+                            <span class="property-card-stats">${floorplanCount} floorplan${floorplanCount !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div class="property-card-input">
+                            <label>Prelease:</label>
+                            <input type="number" 
+                                value="${hasPrelease ? prelease : ''}" 
+                                placeholder="Market"
+                                min="0" max="100" step="1"
+                                onchange="updatePropertyPrelease('${propName.replace(/'/g, "\\'")}', this.value)"
+                                onblur="if(this.value === '') updatePropertyPrelease('${propName.replace(/'/g, "\\'")}', null)">
+                            <span>%</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Add Row
+        function addRow() {
+            propertyData.push({
+                id: Date.now(),
+                property: '',
+                floorplan: '',
+                bedrooms: '',
+                units: '',
+                override: '',
+                notes: ''
+            });
+            renderAll();
+            saveToStorage();
+            
+            // Focus the first cell (Property Name) in the new row
+            setTimeout(() => {
+                const tbody = document.getElementById('data-tbody');
+                const rows = tbody.querySelectorAll('tr');
+                const lastRow = rows[rows.length - 1];
+                if (lastRow) {
+                    const firstInput = lastRow.querySelector('input, select');
+                    if (firstInput) {
+                        firstInput.focus();
+                        if (firstInput.select) firstInput.select();
+                    }
+                }
+            }, 50);
+        }
+
+        // Pending delete ID
+        let pendingDeleteId = null;
+
+        // Delete Row - show confirmation modal only if row has data
+        function deleteRow(id) {
+            const row = propertyData.find(r => r.id === id);
+            
+            // Check if row has any data
+            const hasData = row && (row.property || row.floorplan || row.bedrooms || row.units);
+            
+            if (!hasData) {
+                // Row is blank - delete immediately without confirmation
+                propertyData = propertyData.filter(r => r.id !== id);
+                renderAll();
+                saveToStorage();
+                return;
+            }
+            
+            // Row has data - show confirmation modal
+            const message = row.property && row.floorplan 
+                ? `Are you sure you want to delete "<strong>${row.floorplan}</strong>" from ${row.property}?`
+                : 'Are you sure you want to delete this floorplan?';
+            
+            document.getElementById('delete-modal-message').innerHTML = message;
+            pendingDeleteId = id;
+            document.getElementById('delete-modal').classList.add('show');
+        }
+
+        // Close delete modal
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('show');
+            pendingDeleteId = null;
+        }
+
+        // Confirm delete
+        function confirmDelete() {
+            if (pendingDeleteId !== null) {
+                propertyData = propertyData.filter(row => row.id !== pendingDeleteId);
+                renderAll();
+                saveToStorage();
+                showToast('Floorplan deleted');
+            }
+            closeDeleteModal();
+        }
+
+        // Close modal on overlay click or Escape key
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('delete-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'delete-modal') {
+                    closeDeleteModal();
+                }
+            });
+            
+            document.getElementById('clear-instructions-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'clear-instructions-modal') {
+                    closeClearInstructionsModal();
+                }
+            });
+            
+            // Survey modal overlays
+            document.getElementById('new-survey-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'new-survey-modal') {
+                    closeNewSurveyModal();
+                }
+            });
+            
+            document.getElementById('rename-survey-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'rename-survey-modal') {
+                    closeRenameSurveyModal();
+                }
+            });
+            
+            document.getElementById('delete-survey-modal').addEventListener('click', (e) => {
+                if (e.target.id === 'delete-survey-modal') {
+                    closeDeleteSurveyModal();
+                }
+            });
+            
+            // Enter key support for survey input fields
+            document.getElementById('new-survey-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    confirmNewSurvey();
+                }
+            });
+            
+            document.getElementById('rename-survey-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    confirmRenameSurvey();
+                }
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (document.getElementById('delete-modal').classList.contains('show')) {
+                        closeDeleteModal();
+                    }
+                    if (document.getElementById('clear-instructions-modal').classList.contains('show')) {
+                        closeClearInstructionsModal();
+                    }
+                    if (document.getElementById('new-survey-modal').classList.contains('show')) {
+                        closeNewSurveyModal();
+                    }
+                    if (document.getElementById('rename-survey-modal').classList.contains('show')) {
+                        closeRenameSurveyModal();
+                    }
+                    if (document.getElementById('delete-survey-modal').classList.contains('show')) {
+                        closeDeleteSurveyModal();
+                    }
+                    // Close context menu
+                    document.getElementById('survey-context-menu').classList.remove('show');
+                }
+            });
+        });
+
+        // Update Row Data
+        function updateRow(id, field, value) {
+            const row = propertyData.find(r => r.id === id);
+            if (row) {
+                row[field] = value;
+                renderAll();
+                saveToStorage();
+            }
+        }
+
+        // Get Effective Prelease % - now checks property-level first
+        function getEffectivePrelease(row) {
+            // First check if property has a set prelease %
+            if (row.property && propertyPrelease[row.property] !== null && propertyPrelease[row.property] !== undefined) {
+                return propertyPrelease[row.property] / 100;
+            }
+            // Fall back to market average based on bedroom type
+            if (row.bedrooms && avgKeyMap[row.bedrooms]) {
+                return marketAverages[avgKeyMap[row.bedrooms]];
+            }
+            return null;
+        }
+
+        // Get prelease source for display
+        function getPreleaseSource(row) {
+            if (row.property && propertyPrelease[row.property] !== null && propertyPrelease[row.property] !== undefined) {
+                return 'property';
+            }
+            if (row.bedrooms && avgKeyMap[row.bedrooms]) {
+                return 'market';
+            }
+            return null;
+        }
+
+        // Calculate Total Beds
+        function calculateTotalBeds(row) {
+            if (!row.bedrooms || !row.units || row.units === '') return null;
+            return bedsPerType[row.bedrooms] * parseInt(row.units);
+        }
+
+        // Calculate Leased Beds (or use override)
+        function calculateLeasedBeds(row) {
+            // If override is set, use it
+            if (row.override !== '' && row.override !== null && row.override !== undefined) {
+                return parseInt(row.override);
+            }
+            
+            const totalBeds = calculateTotalBeds(row);
+            const effectivePrelease = getEffectivePrelease(row);
+            if (totalBeds === null || effectivePrelease === null) return null;
+            return Math.round(totalBeds * effectivePrelease);
+        }
+
+        // Get leased beds source
+        function getLeasedBedsSource(row) {
+            if (row.override !== '' && row.override !== null && row.override !== undefined) {
+                return 'override';
+            }
+            return getPreleaseSource(row);
+        }
+
+        // Copy note to clipboard
+        function copyNote(id) {
+            const row = propertyData.find(r => r.id === id);
+            if (row && row.notes) {
+                navigator.clipboard.writeText(row.notes).then(() => {
+                    showToast('Note copied!');
+                });
+            }
+        }
+
+        // Copy note text directly (for report)
+        function copyNoteText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Note copied!');
+            });
+        }
+
+        // Auto-resize textarea
+        function autoResizeTextarea(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        // Initialize textarea heights after render
+        function initTextareaHeights() {
+            document.querySelectorAll('.notes-input').forEach(textarea => {
+                autoResizeTextarea(textarea);
+            });
+        }
+
+        // Render Data Table
+        function renderDataTable() {
+            const tbody = document.getElementById('data-tbody');
+            
+            if (propertyData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <p>No data yet. Click "Add Floorplan" to get started, or select "Sample Market" from the dropdown to see an example.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = propertyData.map(row => {
+                const source = getPreleaseSource(row);
+                const leasedSource = getLeasedBedsSource(row);
+                const usesMarketAvg = source === 'market';
+                const effectivePrelease = getEffectivePrelease(row);
+                const totalBeds = calculateTotalBeds(row);
+                const leasedBeds = calculateLeasedBeds(row);
+                const hasOverride = row.override !== '' && row.override !== null && row.override !== undefined;
+
+                return `
+                    <tr class="${usesMarketAvg && !hasOverride ? 'uses-market-avg' : ''}">
+                        <td class="col-property">
+                            <input type="text" value="${row.property || ''}" 
+                                onchange="updateRow(${row.id}, 'property', this.value)"
+                                placeholder="Enter property name">
+                        </td>
+                        <td class="col-floorplan">
+                            <input type="text" value="${row.floorplan || ''}" 
+                                onchange="updateRow(${row.id}, 'floorplan', this.value)"
+                                placeholder="Enter floorplan">
+                        </td>
+                        <td class="col-beds">
+                            <select onchange="updateRow(${row.id}, 'bedrooms', this.value)">
+                                <option value="">Select...</option>
+                                ${bedroomOptions.map(opt => 
+                                    `<option value="${opt}" ${row.bedrooms === opt ? 'selected' : ''}>${opt}</option>`
+                                ).join('')}
+                            </select>
+                        </td>
+                        <td class="col-units">
+                            <input type="number" value="${row.units || ''}" 
+                                onchange="updateRow(${row.id}, 'units', this.value)"
+                                placeholder="0" min="0" style="text-align: center;">
+                        </td>
+                        <td class="col-effective calculated" style="text-align: center;">
+                            <span class="effective-cell">
+                                ${effectivePrelease !== null ? (effectivePrelease * 100).toFixed(1) + '%' : '-'}
+                                ${source === 'property' ? '<span class="source-indicator property" title="From property setting">P</span>' : ''}
+                                ${source === 'market' ? '<span class="source-indicator market" title="Market average">M</span>' : ''}
+                            </span>
+                        </td>
+                        <td class="col-total-beds calculated" style="text-align: center;">
+                            ${totalBeds !== null ? totalBeds : '-'}
+                        </td>
+                        <td class="col-override">
+                            <input type="number" value="${row.override || ''}" 
+                                onchange="updateRow(${row.id}, 'override', this.value)"
+                                placeholder="-" min="0" style="text-align: center;">
+                        </td>
+                        <td class="col-leased leased-value" style="text-align: center; position: relative;">
+                            ${leasedBeds !== null ? leasedBeds : '-'}
+                            ${leasedSource === 'override' ? '<span class="source-indicator override" style="position: absolute; right: 0.25rem; top: 50%; transform: translateY(-50%);" title="Manual override">O</span>' : ''}
+                        </td>
+                        <td class="col-notes">
+                            <div class="notes-cell">
+                                <textarea class="notes-input" 
+                                    onchange="updateRow(${row.id}, 'notes', this.value)"
+                                    oninput="autoResizeTextarea(this)"
+                                    placeholder="Add note...">${row.notes || ''}</textarea>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-small btn-danger" onclick="deleteRow(${row.id})" style="padding: 0.25rem 0.5rem;">✕</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update Report
+        function updateReport() {
+            const validRows = propertyData.filter(row => 
+                row.property && row.floorplan && row.bedrooms && row.units
+            );
+
+            const properties = new Set(validRows.map(r => r.property)).size;
+            const floorplans = validRows.length;
+            const totalBeds = validRows.reduce((sum, row) => sum + (calculateTotalBeds(row) || 0), 0);
+            const leasedBeds = validRows.reduce((sum, row) => sum + (calculateLeasedBeds(row) || 0), 0);
+            const overallPrelease = totalBeds > 0 ? (leasedBeds / totalBeds * 100).toFixed(1) : 0;
+
+            document.getElementById('summary-properties').textContent = properties;
+            document.getElementById('summary-floorplans').textContent = floorplans;
+            document.getElementById('summary-beds').textContent = totalBeds.toLocaleString();
+            document.getElementById('summary-leased').textContent = leasedBeds.toLocaleString();
+            document.getElementById('summary-prelease').textContent = overallPrelease + '%';
+
+            const reportTbody = document.getElementById('report-tbody');
+            
+            if (validRows.length === 0) {
+                reportTbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <p>No complete data to display. Fill in property data first.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Track property groups for alternating colors
+            let currentProperty = '';
+            let groupIndex = 0;
+
+            reportTbody.innerHTML = validRows.map(row => {
+                // Check if property changed
+                if (row.property !== currentProperty) {
+                    currentProperty = row.property;
+                    groupIndex++;
+                }
+                
+                const groupClass = groupIndex % 2 === 0 ? 'report-row-group-a' : 'report-row-group-b';
+                const effectivePrelease = getEffectivePrelease(row);
+                const source = getPreleaseSource(row);
+                const leasedSource = getLeasedBedsSource(row);
+                const totalBeds = calculateTotalBeds(row);
+                const leasedBeds = calculateLeasedBeds(row);
+
+                return `
+                    <tr class="${groupClass}">
+                        <td>${row.property}</td>
+                        <td>${row.floorplan}</td>
+                        <td style="text-align: center;">${bedsPerType[row.bedrooms]}</td>
+                        <td style="text-align: center;">${totalBeds}</td>
+                        <td style="text-align: center;">
+                            ${leasedSource === 'override' ? '-' : (effectivePrelease * 100).toFixed(1) + '%'}
+                            ${source === 'property' && leasedSource !== 'override' ? '<span class="source-indicator property" title="From property setting">P</span>' : ''}
+                            ${source === 'market' && leasedSource !== 'override' ? '<span class="source-indicator market" title="Market average">M</span>' : ''}
+                        </td>
+                        <td style="text-align: center; position: relative;" class="leased-value">
+                            ${leasedBeds}
+                            ${leasedSource === 'override' ? '<span class="source-indicator override" style="position: absolute; right: 0.25rem; top: 50%; transform: translateY(-50%);" title="Manual override">O</span>' : ''}
+                        </td>
+                        <td style="font-size: 0.85rem; color: var(--text-secondary);">
+                            ${row.notes ? `<span class="report-note" onclick="copyNoteText('${row.notes.replace(/'/g, "\\'")}')" title="Click to copy">${row.notes}</span>` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Sample Data
+        function addSampleData() {
+            propertyData = [
+                { id: 1, property: 'The Heights', floorplan: 'Studio Deluxe', bedrooms: 'Studio', units: '24', override: '', notes: '' },
+                { id: 2, property: 'The Heights', floorplan: 'A1', bedrooms: '1 BR', units: '36', override: '', notes: '' },
+                { id: 3, property: 'The Heights', floorplan: 'B1', bedrooms: '2 BR', units: '48', override: '', notes: '' },
+                { id: 4, property: 'The Heights', floorplan: 'B2 Premium', bedrooms: '2 BR', units: '24', override: '48', notes: 'Fully leased per website' },
+                { id: 5, property: 'The Heights', floorplan: 'C1', bedrooms: '3 BR', units: '32', override: '', notes: '' },
+                { id: 6, property: 'University Village', floorplan: 'Efficiency', bedrooms: 'Studio', units: '20', override: '', notes: '' },
+                { id: 7, property: 'University Village', floorplan: 'One Bed', bedrooms: '1 BR', units: '40', override: '', notes: '' },
+                { id: 8, property: 'University Village', floorplan: 'Two Bed A', bedrooms: '2 BR', units: '60', override: '', notes: '' },
+                { id: 9, property: 'University Village', floorplan: 'Two Bed B', bedrooms: '2 BR', units: '30', override: '', notes: '' },
+                { id: 10, property: 'University Village', floorplan: 'Three Bed', bedrooms: '3 BR', units: '48', override: '', notes: '' },
+                { id: 11, property: 'University Village', floorplan: 'Four Bed', bedrooms: '4 BR', units: '24', override: '', notes: '' },
+                { id: 12, property: 'Campus Edge', floorplan: 'Studio', bedrooms: 'Studio', units: '16', override: '', notes: '' },
+                { id: 13, property: 'Campus Edge', floorplan: '1BR Classic', bedrooms: '1 BR', units: '32', override: '', notes: '' },
+                { id: 14, property: 'Campus Edge', floorplan: '2BR Standard', bedrooms: '2 BR', units: '40', override: '', notes: '' },
+                { id: 15, property: 'Campus Edge', floorplan: '3BR Townhome', bedrooms: '3 BR', units: '20', override: '', notes: '' }
+            ];
+            // Set property-level prelease percentages
+            propertyPrelease = {
+                'The Heights': 52,
+                'University Village': null,  // Uses market averages
+                'Campus Edge': 48
+            };
+            renderAll();
+            saveToStorage();
+            showToast('Sample data loaded!');
+        }
+
+        // Clear All
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data?')) {
+                propertyData = [];
+                propertyPrelease = {};
+                renderAll();
+                saveToStorage();
+            }
+        }
+
+        // Copy Report to Clipboard
+        function copyReportToClipboard() {
+            const validRows = propertyData.filter(row => 
+                row.property && row.floorplan && row.bedrooms && row.units
+            );
+
+            if (validRows.length === 0) {
+                showToast('No data to copy!');
+                return;
+            }
+
+            let text = 'Property\tFloorplan\tBeds/Unit\tTotal Beds\tPrelease %\tLeased Beds\n';
+            
+            validRows.forEach(row => {
+                const effectivePrelease = getEffectivePrelease(row);
+                const totalBeds = calculateTotalBeds(row);
+                const leasedBeds = calculateLeasedBeds(row);
+                
+                text += `${row.property}\t${row.floorplan}\t${bedsPerType[row.bedrooms]}\t${totalBeds}\t${(effectivePrelease * 100).toFixed(1)}%\t${leasedBeds}\n`;
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Report copied to clipboard!');
+            });
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            const validRows = propertyData.filter(row => 
+                row.property && row.floorplan && row.bedrooms && row.units
+            );
+
+            if (validRows.length === 0) {
+                showToast('No data to export!');
+                return;
+            }
+
+            let csv = 'Property,Floorplan,Bedrooms,Units,Prelease Source,Effective %,Total Beds,Leased Beds,Notes\n';
+            
+            validRows.forEach(row => {
+                const effectivePrelease = getEffectivePrelease(row);
+                const source = getPreleaseSource(row);
+                const leasedSource = getLeasedBedsSource(row);
+                const totalBeds = calculateTotalBeds(row);
+                const leasedBeds = calculateLeasedBeds(row);
+                let sourceLabel;
+                if (leasedSource === 'override') {
+                    sourceLabel = 'Override';
+                } else if (source === 'property') {
+                    sourceLabel = `Property (${propertyPrelease[row.property]}%)`;
+                } else {
+                    sourceLabel = 'Market Avg';
+                }
+                const effectiveDisplay = leasedSource === 'override' ? 'Override' : (effectivePrelease * 100).toFixed(1) + '%';
+                
+                csv += `"${row.property}","${row.floorplan}","${row.bedrooms}",${row.units},"${sourceLabel}","${effectiveDisplay}",${totalBeds},${leasedBeds},"${row.notes || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'market_survey_report.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('CSV exported!');
+        }
+
+        // Toast Notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Local Storage - now saves to current survey
+        function saveToStorage() {
+            saveCurrentSurveyData();
+        }
+
+        function loadFromStorage() {
+            // This is now handled by initializeSurveys() and loadCurrentSurveyData()
+            // Kept for backward compatibility - migrate old data if exists
+            migrateOldData();
+        }
+        
+        // Migrate old single-survey data to new multi-survey format
+        function migrateOldData() {
+            const oldData = localStorage.getItem('msat-data');
+            const oldAverages = localStorage.getItem('msat-averages');
+            const oldPrelease = localStorage.getItem('msat-property-prelease');
+            const oldInstructions = localStorage.getItem('msat-instructions');
+            const newSurveys = localStorage.getItem('msat-surveys');
+            
+            // If we have old data and no new surveys, migrate
+            if (oldData && !newSurveys) {
+                const migratedId = generateId();
+                surveys[migratedId] = {
+                    name: 'My Market Survey',
+                    slug: 'my-market-survey',
+                    data: JSON.parse(oldData),
+                    averages: oldAverages ? JSON.parse(oldAverages) : { ...defaultMarketAverages },
+                    prelease: oldPrelease ? JSON.parse(oldPrelease) : {},
+                    instructions: oldInstructions || '',
+                    darkMode: localStorage.getItem('msat-editor-dark-mode') === 'true'
+                };
+                saveSurveysToStorage();
+                
+                // Clean up old keys
+                localStorage.removeItem('msat-data');
+                localStorage.removeItem('msat-averages');
+                localStorage.removeItem('msat-property-prelease');
+                localStorage.removeItem('msat-instructions');
+                localStorage.removeItem('msat-editor-dark-mode');
+                
+                currentSurveyId = migratedId;
+                loadCurrentSurveyData();
+                renderSurveyDropdown();
+            }
+        }
+
+        // ============ Instructions Editor Functions ============
+
+        // Handle keydown events in the editor
+        function handleEditorKeydown(event) {
+            const selection = window.getSelection();
+            const node = selection.anchorNode;
+            
+            // Find checklist elements
+            let checklistItem = null;
+            let checklistText = null;
+            
+            if (node) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    checklistText = node.parentElement?.closest('.checklist-text');
+                    checklistItem = node.parentElement?.closest('.checklist-item');
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    checklistText = node.closest('.checklist-text');
+                    checklistItem = node.closest('.checklist-item');
+                }
+            }
+            
+            if (checklistText || checklistItem) {
+                // Handle Enter key - add new checklist item
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    const currentItem = checklistText?.closest('.checklist-item') || checklistItem;
+                    const isIndented = currentItem?.classList.contains('indented');
+                    addChecklistItemAfter(currentItem, isIndented);
+                    return;
+                }
+                
+                // Handle Tab key - indent/unindent
+                if (event.key === 'Tab') {
+                    event.preventDefault();
+                    const currentItem = checklistText?.closest('.checklist-item') || checklistItem;
+                    if (currentItem) {
+                        if (event.shiftKey) {
+                            // Shift+Tab - unindent
+                            currentItem.classList.remove('indented');
+                        } else {
+                            // Tab - indent
+                            currentItem.classList.add('indented');
+                        }
+                        saveInstructions();
+                    }
+                    return;
+                }
+                
+                // Handle Backspace key - remove checklist item if at beginning of empty text
+                if (event.key === 'Backspace') {
+                    const currentItem = checklistText?.closest('.checklist-item') || checklistItem;
+                    const textSpan = currentItem?.querySelector('.checklist-text');
+                    const textContent = textSpan?.textContent || '';
+                    const cursorPosition = selection.anchorOffset;
+                    
+                    // If at beginning of text (or text is empty), convert to regular line
+                    if (cursorPosition === 0 || textContent.trim() === '') {
+                        event.preventDefault();
+                        
+                        // Create a regular paragraph/line break
+                        const br = document.createElement('br');
+                        currentItem.parentNode.insertBefore(br, currentItem);
+                        
+                        // Remove the checklist item
+                        currentItem.remove();
+                        
+                        // Place cursor at the br position
+                        const range = document.createRange();
+                        range.setStartBefore(br);
+                        range.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        
+                        saveInstructions();
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Execute rich text command
+        function execCmd(command) {
+            document.execCommand(command, false, null);
+            document.getElementById('instructions-editor').focus();
+        }
+
+        // Set text color
+        function setTextColor(color) {
+            document.execCommand('foreColor', false, color);
+            document.getElementById('instructions-editor').focus();
+        }
+
+        // Add checklist item
+        function addChecklistItem() {
+            const editor = document.getElementById('instructions-editor');
+            const newItem = createChecklistElement(false);
+            editor.appendChild(newItem);
+            
+            // Focus the text span
+            const textSpan = newItem.querySelector('.checklist-text');
+            textSpan.focus();
+            saveInstructions();
+        }
+
+        // Create a checklist element
+        function createChecklistElement(isIndented) {
+            const div = document.createElement('div');
+            div.className = 'checklist-item' + (isIndented ? ' indented' : '');
+            div.innerHTML = `
+                <input type="checkbox" class="checklist-checkbox" onchange="toggleChecklistItem(this)">
+                <span class="checklist-text" contenteditable="true"></span>
+            `;
+            return div;
+        }
+
+        // Add checklist item after a specific item
+        function addChecklistItemAfter(afterElement, isIndented) {
+            const newItem = createChecklistElement(isIndented);
+            
+            if (afterElement && afterElement.nextSibling) {
+                afterElement.parentNode.insertBefore(newItem, afterElement.nextSibling);
+            } else if (afterElement) {
+                afterElement.parentNode.appendChild(newItem);
+            } else {
+                document.getElementById('instructions-editor').appendChild(newItem);
+            }
+            
+            // Focus the new item's text span and place cursor at start
+            const textSpan = newItem.querySelector('.checklist-text');
+            if (textSpan) {
+                textSpan.focus();
+                // Place cursor at the beginning
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(textSpan);
+                range.collapse(true); // Collapse to start
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            saveInstructions();
+        }
+
+        // Toggle checklist item
+        function toggleChecklistItem(checkbox) {
+            const textSpan = checkbox.nextElementSibling;
+            if (checkbox.checked) {
+                textSpan.classList.add('checked');
+            } else {
+                textSpan.classList.remove('checked');
+            }
+            saveInstructions();
+        }
+
+        // Clear all checks (but keep content)
+        function clearAllChecks() {
+            const checkboxes = document.querySelectorAll('#instructions-editor .checklist-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+                const textSpan = cb.nextElementSibling;
+                if (textSpan) {
+                    textSpan.classList.remove('checked');
+                }
+            });
+            saveInstructions();
+            showToast('All checks cleared!');
+        }
+
+        // Clear all instructions - show modal
+        function clearInstructions() {
+            document.getElementById('clear-instructions-modal').classList.add('show');
+        }
+
+        // Close clear instructions modal
+        function closeClearInstructionsModal() {
+            document.getElementById('clear-instructions-modal').classList.remove('show');
+        }
+
+        // Confirm clear instructions
+        function confirmClearInstructions() {
+            document.getElementById('instructions-editor').innerHTML = '';
+            saveInstructions();
+            showToast('Instructions cleared!');
+            closeClearInstructionsModal();
+        }
+
+        // Save instructions to localStorage
+        function saveInstructions() {
+            // Save to current survey
+            saveCurrentSurveyData();
+        }
+
+        // Toggle dark mode for instructions editor
+        function toggleEditorDarkMode() {
+            const editor = document.getElementById('instructions-editor');
+            const checkbox = document.getElementById('editor-dark-mode');
+            const isDark = checkbox.checked;
+            
+            if (isDark) {
+                editor.classList.add('dark-mode');
+                // Swap black text to white
+                swapTextColors(editor, '#1a202c', '#f1f5f9');
+                swapTextColors(editor, 'rgb(26, 32, 44)', '#f1f5f9');
+                swapTextColors(editor, 'black', '#f1f5f9');
+            } else {
+                editor.classList.remove('dark-mode');
+                // Swap white text to black
+                swapTextColors(editor, '#f1f5f9', '#1a202c');
+                swapTextColors(editor, 'rgb(241, 245, 249)', '#1a202c');
+                swapTextColors(editor, 'white', '#1a202c');
+            }
+            
+            // Save to current survey
+            saveInstructions();
+        }
+
+        // Swap text colors in the editor
+        function swapTextColors(element, fromColor, toColor) {
+            const elements = element.querySelectorAll('[style*="color"]');
+            elements.forEach(el => {
+                const style = el.getAttribute('style');
+                if (style) {
+                    const colorMatch = style.match(/color:\s*([^;]+)/i);
+                    if (colorMatch) {
+                        const currentColor = colorMatch[1].trim().toLowerCase();
+                        const fromColorLower = fromColor.toLowerCase();
+                        if (currentColor === fromColorLower || 
+                            currentColor === fromColorLower.replace(/\s/g, '')) {
+                            el.style.color = toColor;
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load dark mode preference on init
+        function loadEditorDarkMode() {
+            // Dark mode is now stored per-survey and loaded in loadCurrentSurveyData()
+            // This function is kept for backward compatibility
+            const checkbox = document.getElementById('editor-dark-mode');
+            const editor = document.getElementById('instructions-editor');
+            
+            if (checkbox && editor) {
+                if (checkbox.checked) {
+                    editor.classList.add('dark-mode');
+                } else {
+                    editor.classList.remove('dark-mode');
+                }
+            }
+        }
+
+        // ============ Image Handling Functions ============
+
+        // Trigger image file picker
+        function triggerImageUpload() {
+            document.getElementById('image-upload').click();
+        }
+
+        // Handle image upload from file picker
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                insertImageFile(file);
+            }
+            event.target.value = ''; // Reset for future uploads
+        }
+
+        // Handle image paste
+        function handleImagePaste(event) {
+            const items = event.clipboardData?.items;
+            if (!items) return;
+
+            for (let item of items) {
+                if (item.type.startsWith('image/')) {
+                    event.preventDefault();
+                    const file = item.getAsFile();
+                    insertImageFile(file);
+                    return;
+                }
+            }
+        }
+
+        // Handle image drop
+        function handleImageDrop(event) {
+            event.preventDefault();
+            const editor = document.getElementById('instructions-editor');
+            editor.classList.remove('drag-over');
+
+            const files = event.dataTransfer?.files;
+            if (!files) return;
+
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    insertImageFile(file);
+                }
+            }
+        }
+
+        // Insert image file into editor
+        function insertImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '400px';
+                img.onclick = (ev) => selectImage(ev, img);
+                
+                // Insert at cursor position
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(img);
+                    range.setStartAfter(img);
+                    range.collapse(true);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                } else {
+                    document.getElementById('instructions-editor').appendChild(img);
+                }
+                
+                saveInstructions();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Currently selected image
+        let selectedImage = null;
+        let isResizing = false;
+        let resizeStartX, resizeStartY, resizeStartWidth, resizeStartHeight;
+
+        // Select image for editing
+        function selectImage(event, img) {
+            event.stopPropagation();
+            
+            // Deselect previous
+            if (selectedImage) {
+                selectedImage.classList.remove('selected');
+            }
+            
+            selectedImage = img;
+            img.classList.add('selected');
+            
+            // Add resize handles if not already present
+            if (!img.parentElement?.classList?.contains('image-wrapper')) {
+                wrapImageWithHandles(img);
+            }
+        }
+
+        // Wrap image with resize handles
+        function wrapImageWithHandles(img) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'image-wrapper selected';
+            wrapper.contentEditable = 'false';
+            
+            img.parentNode.insertBefore(wrapper, img);
+            wrapper.appendChild(img);
+            img.classList.remove('selected');
+            
+            // Add resize handles
+            const handles = ['nw', 'ne', 'sw', 'se'];
+            handles.forEach(pos => {
+                const handle = document.createElement('div');
+                handle.className = `resize-handle ${pos}`;
+                handle.onmousedown = (e) => startResize(e, img, pos);
+                wrapper.appendChild(handle);
+            });
+            
+            // Add size label
+            const sizeLabel = document.createElement('div');
+            sizeLabel.className = 'image-size-label';
+            wrapper.appendChild(sizeLabel);
+            
+            // Setup drag-to-move
+            setupImageDrag(wrapper);
+            
+            selectedImage = wrapper;
+        }
+
+        // Initialize loaded images (re-attach event handlers after loading from storage)
+        function initializeLoadedImages() {
+            const editor = document.getElementById('instructions-editor');
+            const imageWrappers = editor.querySelectorAll('.image-wrapper');
+            imageWrappers.forEach(wrapper => {
+                const img = wrapper.querySelector('img');
+                if (img) {
+                    // Re-attach resize handlers
+                    const handles = wrapper.querySelectorAll('.resize-handle');
+                    handles.forEach(handle => {
+                        const pos = handle.classList.contains('nw') ? 'nw' :
+                                   handle.classList.contains('ne') ? 'ne' :
+                                   handle.classList.contains('sw') ? 'sw' : 'se';
+                        handle.onmousedown = (e) => startResize(e, img, pos);
+                    });
+                    
+                    // Re-attach click handler
+                    wrapper.onclick = (e) => {
+                        e.stopPropagation();
+                        selectImage(wrapper);
+                    };
+                    
+                    // Setup drag-to-move
+                    setupImageDrag(wrapper);
+                }
+            });
+        }
+
+        // Dragging image variables
+        let draggedImage = null;
+        let isDraggingImage = false;
+        let dragStartX, dragStartY;
+        let dropIndicator = null;
+
+        // Cross-browser caret range helper
+        function getRangeFromPoint(x, y) {
+            if (document.caretRangeFromPoint) {
+                return document.caretRangeFromPoint(x, y);
+            }
+            if (document.caretPositionFromPoint) {
+                const pos = document.caretPositionFromPoint(x, y);
+                if (!pos) return null;
+                const range = document.createRange();
+                range.setStart(pos.offsetNode, pos.offset);
+                range.collapse(true);
+                return range;
+            }
+            return null;
+        }
+
+        // Fallback range when browser doesn't give a caret at point
+        function getFallbackRange(editor) {
+            const range = document.createRange();
+            if (editor.childNodes.length) {
+                const last = editor.childNodes[editor.childNodes.length - 1];
+                if (last.nodeType === Node.TEXT_NODE) {
+                    range.setStart(last, last.textContent.length);
+                } else {
+                    range.setStartAfter(last);
+                }
+            } else {
+                const text = document.createTextNode('');
+                editor.appendChild(text);
+                range.setStart(text, 0);
+            }
+            range.collapse(true);
+            return range;
+        }
+
+        // Create drop indicator element
+        function createDropIndicator(editor) {
+            if (!dropIndicator) {
+                dropIndicator = document.createElement('div');
+                dropIndicator.className = 'drop-indicator';
+                dropIndicator.style.cssText = `
+                    width: 3px;
+                    height: 1.2em;
+                    background: var(--accent-blue);
+                    box-shadow: 0 0 0 1px rgba(255,255,255,0.9);
+                    display: none;
+                    position: absolute;
+                    pointer-events: none;
+                    z-index: 10;
+                    border-radius: 1px;
+                    animation: blink 1s infinite;
+                `;
+            }
+            if (dropIndicator.parentNode !== editor) {
+                dropIndicator.remove();
+                editor.appendChild(dropIndicator);
+            }
+            return dropIndicator;
+        }
+
+        // Setup image dragging using mouse events (not HTML5 drag)
+        function setupImageDrag(wrapper) {
+            wrapper.setAttribute('draggable', 'false'); // Disable HTML5 drag
+            
+            wrapper.addEventListener('mousedown', (e) => {
+                // Only start drag if not clicking on resize handles
+                if (e.target.classList.contains('resize-handle')) return;
+                
+                // Don't start drag immediately - wait for movement
+                // Focus the editor to ensure caret APIs work
+                document.getElementById('instructions-editor').focus();
+
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                draggedImage = wrapper;
+                
+                e.preventDefault();
+            });
+        }
+
+        // Global mouse move handler for image dragging
+        document.addEventListener('mousemove', (e) => {
+            if (!draggedImage) return;
+            
+            // Check if we've moved enough to start dragging
+            const moveThreshold = 5;
+            const dx = Math.abs(e.clientX - dragStartX);
+            const dy = Math.abs(e.clientY - dragStartY);
+            
+            if (!isDraggingImage && (dx > moveThreshold || dy > moveThreshold)) {
+                isDraggingImage = true;
+                draggedImage.style.opacity = '0.5';
+                draggedImage.style.outline = '2px dashed var(--accent-blue)';
+                createDropIndicator(editor);
+            }
+            
+            if (!isDraggingImage) return;
+            
+            const editor = document.getElementById('instructions-editor');
+            const editorRect = editor.getBoundingClientRect();
+            
+            // Check if mouse is over the editor
+            if (e.clientX >= editorRect.left && e.clientX <= editorRect.right &&
+                e.clientY >= editorRect.top && e.clientY <= editorRect.bottom) {
+                
+                // Get caret position at mouse location
+                const indicator = createDropIndicator(editor);
+                let range = getRangeFromPoint(e.clientX, e.clientY);
+                if (!range) {
+                    range = getFallbackRange(editor);
+                }
+                if (range && indicator) {
+                    // Position the indicator at the caret position, relative to editor
+                    let rect = range.getBoundingClientRect();
+                    if (!rect || (rect.width === 0 && rect.height === 0)) {
+                        rect = { left: e.clientX, top: e.clientY, height: 20 };
+                    }
+                    indicator.style.display = 'block';
+                    indicator.style.left = (rect.left - editorRect.left + editor.scrollLeft) + 'px';
+                    indicator.style.top = (rect.top - editorRect.top + editor.scrollTop) + 'px';
+                    indicator.style.height = Math.max(rect.height, 20) + 'px';
+                } else if (dropIndicator) {
+                    dropIndicator.style.display = 'none';
+                }
+            } else if (dropIndicator) {
+                dropIndicator.style.display = 'none';
+            }
+        });
+
+        // Global mouse up handler for image dragging
+        document.addEventListener('mouseup', (e) => {
+            if (!draggedImage) return;
+            
+            const editor = document.getElementById('instructions-editor');
+            const editorRect = editor.getBoundingClientRect();
+            
+            if (isDraggingImage) {
+                // Check if dropped inside editor
+                if (e.clientX >= editorRect.left && e.clientX <= editorRect.right &&
+                    e.clientY >= editorRect.top && e.clientY <= editorRect.bottom) {
+                    
+                    let range = getRangeFromPoint(e.clientX, e.clientY);
+                    if (!range) {
+                        range = getFallbackRange(editor);
+                    }
+                    if (range) {
+                        // Don't move if dropping on itself
+                        if (!draggedImage.contains(range.startContainer)) {
+                            const parent = draggedImage.parentNode;
+                            draggedImage.remove();
+                            range.insertNode(draggedImage);
+                            
+                            // Clean up empty nodes
+                            if (parent && parent !== editor && parent.innerHTML.trim() === '') {
+                                parent.remove();
+                            }
+                        }
+                    }
+                }
+                
+                draggedImage.style.opacity = '1';
+                draggedImage.style.outline = '';
+                saveInstructions();
+            }
+            
+            if (dropIndicator) {
+                dropIndicator.style.display = 'none';
+            }
+            
+            draggedImage = null;
+            isDraggingImage = false;
+        });
+
+        // Start resizing
+        function startResize(event, img, handle) {
+            event.preventDefault();
+            event.stopPropagation();
+            isResizing = true;
+            
+            const wrapper = img.parentElement;
+            wrapper.classList.add('resizing');
+            
+            resizeStartX = event.clientX;
+            resizeStartY = event.clientY;
+            resizeStartWidth = img.offsetWidth;
+            resizeStartHeight = img.offsetHeight;
+            
+            const sizeLabel = wrapper.querySelector('.image-size-label');
+            
+            const onMouseMove = (e) => {
+                if (!isResizing) return;
+                
+                let newWidth, newHeight;
+                const deltaX = e.clientX - resizeStartX;
+                const deltaY = e.clientY - resizeStartY;
+                
+                if (handle === 'se') {
+                    newWidth = resizeStartWidth + deltaX;
+                } else if (handle === 'sw') {
+                    newWidth = resizeStartWidth - deltaX;
+                } else if (handle === 'ne') {
+                    newWidth = resizeStartWidth + deltaX;
+                } else if (handle === 'nw') {
+                    newWidth = resizeStartWidth - deltaX;
+                }
+                
+                // Maintain aspect ratio
+                newWidth = Math.max(50, newWidth);
+                const aspectRatio = resizeStartHeight / resizeStartWidth;
+                newHeight = newWidth * aspectRatio;
+                
+                img.style.width = newWidth + 'px';
+                img.style.height = newHeight + 'px';
+                img.style.maxWidth = 'none';
+                
+                sizeLabel.textContent = `${Math.round(newWidth)} × ${Math.round(newHeight)}`;
+            };
+            
+            const onMouseUp = () => {
+                isResizing = false;
+                wrapper.classList.remove('resizing');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                saveInstructions();
+            };
+            
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+
+        // Deselect image when clicking elsewhere
+        document.addEventListener('click', (e) => {
+            if (selectedImage && !e.target.closest('.image-wrapper') && !e.target.closest('img')) {
+                if (selectedImage.classList) {
+                    selectedImage.classList.remove('selected');
+                }
+                selectedImage = null;
+            }
+        });
+
+        // Handle drag over for visual feedback
+        document.addEventListener('DOMContentLoaded', () => {
+            const editor = document.getElementById('instructions-editor');
+            
+            editor.addEventListener('dragenter', (e) => {
+                if (e.dataTransfer?.types?.includes('Files')) {
+                    editor.classList.add('drag-over');
+                }
+            });
+            
+            editor.addEventListener('dragleave', (e) => {
+                if (!editor.contains(e.relatedTarget)) {
+                    editor.classList.remove('drag-over');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
