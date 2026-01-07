@@ -793,8 +793,8 @@
 
         .property-card-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 0.5rem;
             margin-bottom: 0.75rem;
         }
 
@@ -802,6 +802,7 @@
             font-weight: 600;
             color: var(--text-primary);
             font-size: 0.95rem;
+            flex: 1;
         }
 
         .property-card-stats {
@@ -842,6 +843,89 @@
             color: var(--text-muted);
             font-family: 'DM Sans', sans-serif;
             font-size: 0.8rem;
+        }
+
+        /* Property card selection and filtering */
+        .property-card {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .property-card.selected {
+            border-color: var(--accent-emerald) !important;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05)) !important;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        }
+
+        .property-card.selected .property-card-name::before {
+            content: '✓ ';
+            color: var(--accent-emerald);
+        }
+
+        /* Drag handle for reordering */
+        .property-card-drag-handle {
+            cursor: grab;
+            color: var(--text-muted);
+            font-size: 1rem;
+            padding: 0.25rem;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .property-card:hover .property-card-drag-handle {
+            opacity: 1;
+        }
+
+        .property-card.dragging {
+            opacity: 0.5;
+            transform: scale(1.02);
+        }
+
+        .property-card.drag-over {
+            border-color: var(--accent-cyan) !important;
+            border-style: dashed !important;
+        }
+
+        /* Filter actions bar */
+        .property-filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+        }
+
+        .property-filter-bar.hidden {
+            display: none;
+        }
+
+        .filter-info {
+            flex: 1;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .filter-info strong {
+            color: var(--accent-emerald);
+        }
+
+        .filter-clear-btn {
+            background: transparent;
+            border: 1px solid var(--accent-emerald);
+            color: var(--accent-emerald);
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .filter-clear-btn:hover {
+            background: var(--accent-emerald);
+            color: white;
         }
 
         .section-divider {
@@ -1496,10 +1580,15 @@
             <!-- Property Prelease Section -->
             <div class="property-prelease-section">
                 <h2 class="section-title">Property Prelease Percentages</h2>
-                <p class="section-description">Set a single prelease % for each property. All floorplans under that property will use this rate. Leave blank to use market averages.</p>
+                <p class="section-description">Set a single prelease % for each property. All floorplans under that property will use this rate. Leave blank to use market averages. <em>Click a card to filter floorplans. Drag to reorder.</em></p>
                 
                 <div class="property-prelease-grid" id="property-prelease-grid">
                     <!-- Dynamically populated -->
+                </div>
+                
+                <div class="property-filter-bar hidden" id="property-filter-bar">
+                    <span class="filter-info">Showing floorplans for: <strong id="filter-property-name"></strong></span>
+                    <button class="filter-clear-btn" onclick="clearPropertyFilter()">✕ Clear filter, view all</button>
                 </div>
             </div>
 
@@ -1806,12 +1895,17 @@
         const database = firebase.database();
         let firebaseReady = false;
         let firebaseListenerAttached = false;
+        let localSaveInProgress = false; // Flag to prevent Firebase listener from re-rendering during local saves
         
         // ============ Multi-Survey Management ============
         
         // Current survey ID
         let currentSurveyId = null;
         let surveys = {}; // { id: { name, slug, data, averages, prelease, instructions } }
+        
+        // Property selection and ordering for prelease section
+        let selectedPropertyFilter = null; // Property name to filter floorplans by
+        let propertyOrder = []; // Custom order for property cards (stored per survey)
         
         // Default market averages
         const defaultMarketAverages = {
@@ -2017,6 +2111,10 @@
             propertyData = survey.data || [];
             marketAverages = survey.averages || { ...defaultMarketAverages };
             propertyPrelease = survey.prelease || {};
+            propertyOrder = survey.propertyOrder || [];
+            
+            // Reset property filter when switching surveys
+            selectedPropertyFilter = null;
             
             // Update market averages UI
             Object.keys(marketAverages).forEach(key => {
@@ -2046,6 +2144,7 @@
             surveys[currentSurveyId].data = propertyData;
             surveys[currentSurveyId].averages = marketAverages;
             surveys[currentSurveyId].prelease = propertyPrelease;
+            surveys[currentSurveyId].propertyOrder = propertyOrder;
             surveys[currentSurveyId].instructions = document.getElementById('instructions-editor').innerHTML;
             surveys[currentSurveyId].darkMode = document.getElementById('editor-dark-mode')?.checked || false;
             
@@ -2091,6 +2190,9 @@
             
             updateSyncStatus('syncing');
             
+            // Set flag to prevent Firebase listener from re-rendering
+            localSaveInProgress = true;
+            
             // Filter out sample survey before saving to Firebase
             const surveysToSave = {};
             Object.keys(surveys).forEach(id => {
@@ -2102,10 +2204,13 @@
             database.ref('surveys').set(surveysToSave)
                 .then(() => {
                     updateSyncStatus('synced');
+                    // Clear the flag after a delay to allow Firebase listener to fire first
+                    setTimeout(() => { localSaveInProgress = false; }, 500);
                 })
                 .catch(err => {
                     console.warn('Firebase save failed:', err);
                     updateSyncStatus('offline');
+                    localSaveInProgress = false;
                 });
         }
         
@@ -2146,11 +2251,16 @@
                     // Update localStorage
                     localStorage.setItem('msat-surveys', JSON.stringify(surveys));
                     
-                    // Refresh UI if we have a current survey
+                    // Skip UI refresh if this was triggered by our own save
+                    // This prevents cursor position loss and reverse typing issues
+                    if (localSaveInProgress) {
+                        return;
+                    }
+                    
+                    // Refresh UI if we have a current survey (only for remote changes)
                     if (currentSurveyId && surveys[currentSurveyId]) {
                         loadCurrentSurveyData();
-                        renderTable();
-                        updateReport();
+                        renderAll();
                         renderSurveyDropdown();
                     }
                 }
@@ -2524,6 +2634,19 @@
         // Get unique property names from data
         function getUniqueProperties() {
             const properties = [...new Set(propertyData.filter(r => r.property).map(r => r.property))];
+            
+            // Use custom order if available, otherwise sort alphabetically
+            if (propertyOrder.length > 0) {
+                // Sort by custom order, putting unknown properties at the end alphabetically
+                return properties.sort((a, b) => {
+                    const indexA = propertyOrder.indexOf(a);
+                    const indexB = propertyOrder.indexOf(b);
+                    if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+                    if (indexA === -1) return 1;
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
+                });
+            }
             return properties.sort();
         }
 
@@ -2541,6 +2664,109 @@
             renderAll();
         }
 
+        // Toggle property filter selection
+        function togglePropertyFilter(propertyName, event) {
+            // Don't toggle if clicking on the input
+            if (event.target.tagName === 'INPUT') return;
+            
+            if (selectedPropertyFilter === propertyName) {
+                // Deselect if clicking same property
+                selectedPropertyFilter = null;
+            } else {
+                // Select new property
+                selectedPropertyFilter = propertyName;
+            }
+            
+            updatePropertyFilterUI();
+            renderDataTable();
+        }
+
+        // Clear property filter
+        function clearPropertyFilter() {
+            selectedPropertyFilter = null;
+            updatePropertyFilterUI();
+            renderDataTable();
+        }
+
+        // Update filter UI elements
+        function updatePropertyFilterUI() {
+            const filterBar = document.getElementById('property-filter-bar');
+            const filterName = document.getElementById('filter-property-name');
+            
+            if (selectedPropertyFilter) {
+                filterBar.classList.remove('hidden');
+                filterName.textContent = selectedPropertyFilter;
+            } else {
+                filterBar.classList.add('hidden');
+            }
+            
+            // Update card selection states
+            const cards = document.querySelectorAll('.property-card');
+            cards.forEach(card => {
+                const cardName = card.dataset.property;
+                if (cardName === selectedPropertyFilter) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+        }
+
+        // Drag and drop handlers for property card reordering
+        let draggedPropertyCard = null;
+
+        function handlePropertyDragStart(event, propertyName) {
+            draggedPropertyCard = propertyName;
+            event.target.closest('.property-card').classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', propertyName);
+        }
+
+        function handlePropertyDragEnd(event) {
+            event.target.closest('.property-card')?.classList.remove('dragging');
+            document.querySelectorAll('.property-card').forEach(card => {
+                card.classList.remove('drag-over');
+            });
+            draggedPropertyCard = null;
+        }
+
+        function handlePropertyDragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            const card = event.target.closest('.property-card');
+            if (card && card.dataset.property !== draggedPropertyCard) {
+                card.classList.add('drag-over');
+            }
+        }
+
+        function handlePropertyDragLeave(event) {
+            event.target.closest('.property-card')?.classList.remove('drag-over');
+        }
+
+        function handlePropertyDrop(event, targetProperty) {
+            event.preventDefault();
+            const card = event.target.closest('.property-card');
+            card?.classList.remove('drag-over');
+            
+            if (!draggedPropertyCard || draggedPropertyCard === targetProperty) return;
+            
+            // Get current ordered list
+            const properties = getUniqueProperties();
+            const fromIndex = properties.indexOf(draggedPropertyCard);
+            const toIndex = properties.indexOf(targetProperty);
+            
+            if (fromIndex === -1 || toIndex === -1) return;
+            
+            // Reorder
+            properties.splice(fromIndex, 1);
+            properties.splice(toIndex, 0, draggedPropertyCard);
+            
+            // Save new order
+            propertyOrder = [...properties];
+            saveToStorage();
+            renderPropertyPreleaseCards();
+        }
+
         // Render Property Prelease Cards
         function renderPropertyPreleaseCards() {
             const grid = document.getElementById('property-prelease-grid');
@@ -2548,6 +2774,7 @@
             
             if (properties.length === 0) {
                 grid.innerHTML = `<div class="no-properties-msg">Add floorplans below to see properties here. Each unique property name will appear as a card where you can set its prelease %.</div>`;
+                document.getElementById('property-filter-bar').classList.add('hidden');
                 return;
             }
 
@@ -2556,26 +2783,40 @@
                 const prelease = propertyPrelease[propName];
                 const hasPrelease = prelease !== null && prelease !== undefined;
                 const cardClass = hasPrelease ? 'has-prelease' : 'uses-market-avg';
+                const selectedClass = selectedPropertyFilter === propName ? 'selected' : '';
+                const escapedName = propName.replace(/'/g, "\\'");
                 
                 return `
-                    <div class="property-card ${cardClass}">
+                    <div class="property-card ${cardClass} ${selectedClass}" 
+                         data-property="${propName}"
+                         draggable="true"
+                         onclick="togglePropertyFilter('${escapedName}', event)"
+                         ondragstart="handlePropertyDragStart(event, '${escapedName}')"
+                         ondragend="handlePropertyDragEnd(event)"
+                         ondragover="handlePropertyDragOver(event)"
+                         ondragleave="handlePropertyDragLeave(event)"
+                         ondrop="handlePropertyDrop(event, '${escapedName}')">
                         <div class="property-card-header">
+                            <span class="property-card-drag-handle" title="Drag to reorder">⋮⋮</span>
                             <span class="property-card-name">${propName}</span>
                             <span class="property-card-stats">${floorplanCount} floorplan${floorplanCount !== 1 ? 's' : ''}</span>
                         </div>
-                        <div class="property-card-input">
+                        <div class="property-card-input" onclick="event.stopPropagation()">
                             <label>Prelease:</label>
                             <input type="number" 
                                 value="${hasPrelease ? prelease : ''}" 
                                 placeholder="Market"
                                 min="0" max="100" step="1"
-                                onchange="updatePropertyPrelease('${propName.replace(/'/g, "\\'")}', this.value)"
-                                onblur="if(this.value === '') updatePropertyPrelease('${propName.replace(/'/g, "\\'")}', null)">
+                                onchange="updatePropertyPrelease('${escapedName}', this.value)"
+                                onblur="if(this.value === '') updatePropertyPrelease('${escapedName}', null)">
                             <span>%</span>
                         </div>
                     </div>
                 `;
             }).join('');
+            
+            // Update filter bar visibility
+            updatePropertyFilterUI();
         }
 
         // Add Row
@@ -2883,7 +3124,24 @@
                 return;
             }
 
-            tbody.innerHTML = propertyData.map(row => {
+            // Filter rows if a property is selected
+            const displayRows = selectedPropertyFilter 
+                ? propertyData.filter(row => row.property === selectedPropertyFilter)
+                : propertyData;
+
+            if (displayRows.length === 0 && selectedPropertyFilter) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <p>No floorplans found for "${selectedPropertyFilter}". <a href="#" onclick="clearPropertyFilter(); return false;" style="color: var(--accent-emerald);">View all floorplans</a></p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = displayRows.map(row => {
                 const source = getPreleaseSource(row);
                 const leasedSource = getLeasedBedsSource(row);
                 const usesMarketAvg = source === 'market';
