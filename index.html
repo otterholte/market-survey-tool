@@ -1896,6 +1896,8 @@
         let firebaseReady = false;
         let firebaseListenerAttached = false;
         let localSaveInProgress = false; // Flag to prevent Firebase listener from re-rendering during local saves
+        let saveDebounceTimer = null; // Debounce timer for auto-saving (prevents saving on every keystroke)
+        const SAVE_DEBOUNCE_DELAY = 2000; // Wait 2 seconds after last change before saving
         
         // ============ Multi-Survey Management ============
         
@@ -2326,6 +2328,14 @@
         
         // Listen for hash changes (browser back/forward)
         window.addEventListener('hashchange', loadFromUrlHash);
+        
+        // Save any pending changes before leaving the page
+        window.addEventListener('beforeunload', () => {
+            if (saveDebounceTimer) {
+                clearTimeout(saveDebounceTimer);
+                saveCurrentSurveyData();
+            }
+        });
         
         // ============ Survey CRUD Operations ============
         
@@ -3487,7 +3497,7 @@
                             // Tab - indent
                             currentItem.classList.add('indented');
                         }
-                        saveInstructions();
+                        saveInstructionsNow(); // Discrete action
                     }
                     return;
                 }
@@ -3517,7 +3527,7 @@
                         selection.removeAllRanges();
                         selection.addRange(range);
                         
-                        saveInstructions();
+                        saveInstructionsNow(); // Discrete action
                         return;
                     }
                 }
@@ -3545,7 +3555,7 @@
             // Focus the text span
             const textSpan = newItem.querySelector('.checklist-text');
             textSpan.focus();
-            saveInstructions();
+            saveInstructionsNow(); // Discrete action
         }
 
         // Create a checklist element
@@ -3583,7 +3593,7 @@
                 selection.removeAllRanges();
                 selection.addRange(range);
             }
-            saveInstructions();
+            saveInstructionsNow(); // Discrete action
         }
 
         // Toggle checklist item
@@ -3594,7 +3604,7 @@
             } else {
                 textSpan.classList.remove('checked');
             }
-            saveInstructions();
+            saveInstructionsNow(); // Discrete action, save immediately
         }
 
         // Clear all checks (but keep content)
@@ -3607,7 +3617,7 @@
                     textSpan.classList.remove('checked');
                 }
             });
-            saveInstructions();
+            saveInstructionsNow(); // Discrete action, save immediately
             showToast('All checks cleared!');
         }
 
@@ -3624,14 +3634,31 @@
         // Confirm clear instructions
         function confirmClearInstructions() {
             document.getElementById('instructions-editor').innerHTML = '';
-            saveInstructions();
+            saveInstructionsNow(); // Save immediately, not debounced
             showToast('Instructions cleared!');
             closeClearInstructionsModal();
         }
 
-        // Save instructions to localStorage
+        // Save instructions to localStorage (debounced to prevent saving on every keystroke)
         function saveInstructions() {
-            // Save to current survey
+            // Clear any pending save
+            if (saveDebounceTimer) {
+                clearTimeout(saveDebounceTimer);
+            }
+            
+            // Schedule save after delay (2 seconds of no typing)
+            saveDebounceTimer = setTimeout(() => {
+                saveCurrentSurveyData();
+                saveDebounceTimer = null;
+            }, SAVE_DEBOUNCE_DELAY);
+        }
+        
+        // Force immediate save (for actions like clearing, switching surveys, etc.)
+        function saveInstructionsNow() {
+            if (saveDebounceTimer) {
+                clearTimeout(saveDebounceTimer);
+                saveDebounceTimer = null;
+            }
             saveCurrentSurveyData();
         }
 
@@ -3656,7 +3683,7 @@
             }
             
             // Save to current survey
-            saveInstructions();
+            saveInstructionsNow(); // Discrete action
         }
 
         // Swap text colors in the editor
@@ -3764,7 +3791,7 @@
                     document.getElementById('instructions-editor').appendChild(img);
                 }
                 
-                saveInstructions();
+                saveInstructionsNow(); // Discrete action
             };
             reader.readAsDataURL(file);
         }
@@ -4018,7 +4045,7 @@
                 
                 draggedImage.style.opacity = '1';
                 draggedImage.style.outline = '';
-                saveInstructions();
+                saveInstructionsNow(); // Discrete action
             }
             
             if (dropIndicator) {
@@ -4079,7 +4106,7 @@
                 wrapper.classList.remove('resizing');
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
-                saveInstructions();
+                saveInstructionsNow(); // Discrete action
             };
             
             document.addEventListener('mousemove', onMouseMove);
