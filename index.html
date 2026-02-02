@@ -6,6 +6,7 @@
     <title>Market Survey Analysis Tool</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
@@ -34,6 +35,13 @@
             --border-light: #5a6578;
             --success-bg: rgba(16, 185, 129, 0.15);
             --warning-bg: rgba(245, 158, 11, 0.2);
+            --edited-this-week: #22c55e;
+        }
+        
+        /* Weekly edit tracking - green border for edited inputs */
+        .edited-this-week {
+            border: 2px solid var(--edited-this-week) !important;
+            box-shadow: 0 0 6px rgba(34, 197, 94, 0.3);
         }
 
         body {
@@ -1893,6 +1901,18 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+        
+        // Sign in anonymously (invisible to users)
+        let authReady = false;
+        firebase.auth().signInAnonymously()
+            .then(() => {
+                authReady = true;
+                console.log('Anonymous auth successful');
+            })
+            .catch(err => {
+                console.warn('Anonymous auth failed:', err);
+                authReady = true; // Still mark as ready so app can work with localStorage
+            });
         let firebaseReady = false;
         let firebaseListenerAttached = false;
         let localSaveInProgress = false; // Flag to prevent Firebase listener from re-rendering during local saves
@@ -1923,6 +1943,70 @@
         let propertyData = [];
         let propertyPrelease = {}; // { "Property Name": 52, "Another Property": null }
         let marketAverages = { ...defaultMarketAverages };
+        
+        // Weekly edit tracking - tracks which fields were edited this week
+        // Resets every Monday at 12:00 AM
+        let weeklyEdits = {}; // { surveyId: { weekStart: timestamp, edits: { "prelease:PropertyName": true, "avg:studio": true, "row:123:units": true } } }
+        
+        // Get the Monday 12:00 AM timestamp for the current week
+        function getWeekStartTimestamp() {
+            const now = new Date();
+            const day = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+            const diff = day === 0 ? 6 : day - 1; // Days since Monday
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - diff);
+            monday.setHours(0, 0, 0, 0);
+            return monday.getTime();
+        }
+        
+        // Initialize or reset weekly edits for current survey
+        function initWeeklyEdits() {
+            const weekStart = getWeekStartTimestamp();
+            const surveyEdits = weeklyEdits[currentSurveyId];
+            
+            // Reset if it's a new week or no data exists
+            if (!surveyEdits || surveyEdits.weekStart < weekStart) {
+                weeklyEdits[currentSurveyId] = {
+                    weekStart: weekStart,
+                    edits: {}
+                };
+                saveWeeklyEdits();
+            }
+        }
+        
+        // Mark a field as edited this week
+        function markEdited(fieldKey) {
+            if (!currentSurveyId) return;
+            initWeeklyEdits();
+            weeklyEdits[currentSurveyId].edits[fieldKey] = true;
+            saveWeeklyEdits();
+        }
+        
+        // Check if a field was edited this week
+        function wasEditedThisWeek(fieldKey) {
+            if (!currentSurveyId) return false;
+            const surveyEdits = weeklyEdits[currentSurveyId];
+            if (!surveyEdits) return false;
+            
+            // Check if week has rolled over
+            const weekStart = getWeekStartTimestamp();
+            if (surveyEdits.weekStart < weekStart) return false;
+            
+            return surveyEdits.edits[fieldKey] === true;
+        }
+        
+        // Save weekly edits to localStorage
+        function saveWeeklyEdits() {
+            localStorage.setItem('msat-weekly-edits', JSON.stringify(weeklyEdits));
+        }
+        
+        // Load weekly edits from localStorage
+        function loadWeeklyEdits() {
+            const saved = localStorage.getItem('msat-weekly-edits');
+            if (saved) {
+                weeklyEdits = JSON.parse(saved);
+            }
+        }
 
         // Bedroom type mappings
         const bedroomOptions = ['Studio', '1 BR', '2 BR', '3 BR', '4 BR', '5 BR'];
@@ -1981,6 +2065,25 @@
             if (savedSurveys) {
                 surveys = JSON.parse(savedSurveys);
             }
+            
+            // Wait for auth to be ready before accessing Firebase
+            await new Promise(resolve => {
+                if (authReady) {
+                    resolve();
+                } else {
+                    const checkAuth = setInterval(() => {
+                        if (authReady) {
+                            clearInterval(checkAuth);
+                            resolve();
+                        }
+                    }, 100);
+                    // Timeout after 5 seconds
+                    setTimeout(() => {
+                        clearInterval(checkAuth);
+                        resolve();
+                    }, 5000);
+                }
+            });
             
             // Try to load from Firebase (may have newer data from other devices)
             try {
@@ -2114,6 +2217,9 @@
             marketAverages = survey.averages || { ...defaultMarketAverages };
             propertyPrelease = survey.prelease || {};
             propertyOrder = survey.propertyOrder || [];
+            
+            // Initialize/reset weekly edits for this survey
+            initWeeklyEdits();
             
             // Reset property filter when switching surveys
             selectedPropertyFilter = null;
@@ -2550,9 +2656,12 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
+            // Load weekly edit tracking
+            loadWeeklyEdits();
             // Initialize multi-survey system (async - loads from Firebase)
             await initializeSurveys();
             loadFromStorage(); // Handles migration
+            initWeeklyEdits(); // Initialize/reset weekly edits for current survey
             renderAll();
             setupDataTableKeyboardNav();
         });
@@ -2562,6 +2671,7 @@
             renderPropertyPreleaseCards();
             renderDataTable();
             updateReport();
+            updateMarketAverageEditIndicators();
             // Re-setup keyboard nav and textarea heights after render
             setTimeout(() => {
                 setupDataTableKeyboardNav();
@@ -2635,10 +2745,29 @@
             const numValue = parseFloat(value.replace('%', '')) / 100;
             if (!isNaN(numValue) && numValue >= 0 && numValue <= 1) {
                 marketAverages[type] = numValue;
-                document.getElementById(`avg-${type}`).value = (numValue * 100).toFixed(0) + '%';
+                const input = document.getElementById(`avg-${type}`);
+                input.value = (numValue * 100).toFixed(0) + '%';
+                // Track this edit for the week
+                markEdited(`avg:${type}`);
+                input.classList.add('edited-this-week');
                 saveToStorage();
                 renderDataTable();
             }
+        }
+        
+        // Update market average edit indicators on page load/survey switch
+        function updateMarketAverageEditIndicators() {
+            const avgTypes = ['studio', '1br', '2br', '3br', '4br', '5br'];
+            avgTypes.forEach(type => {
+                const input = document.getElementById(`avg-${type}`);
+                if (input) {
+                    if (wasEditedThisWeek(`avg:${type}`)) {
+                        input.classList.add('edited-this-week');
+                    } else {
+                        input.classList.remove('edited-this-week');
+                    }
+                }
+            });
         }
 
         // Get unique property names from data
@@ -2668,6 +2797,8 @@
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
                     propertyPrelease[propertyName] = numValue;
+                    // Track this edit for the week
+                    markEdited(`prelease:${propertyName}`);
                 }
             }
             saveToStorage();
@@ -2795,6 +2926,7 @@
                 const cardClass = hasPrelease ? 'has-prelease' : 'uses-market-avg';
                 const selectedClass = selectedPropertyFilter === propName ? 'selected' : '';
                 const escapedName = propName.replace(/'/g, "\\'");
+                const editedClass = wasEditedThisWeek(`prelease:${propName}`) ? 'edited-this-week' : '';
                 
                 return `
                     <div class="property-card ${cardClass} ${selectedClass}" 
@@ -2814,6 +2946,7 @@
                         <div class="property-card-input" onclick="event.stopPropagation()">
                             <label>Prelease:</label>
                             <input type="number" 
+                                class="${editedClass}"
                                 value="${hasPrelease ? prelease : ''}" 
                                 placeholder="Market"
                                 min="0" max="100" step="1"
@@ -2980,6 +3113,11 @@
             const row = propertyData.find(r => r.id === id);
             if (row) {
                 row[field] = value;
+                
+                // Track numeric field edits for the week (units and override)
+                if (field === 'units' || field === 'override') {
+                    markEdited(`row:${id}:${field}`);
+                }
                 
                 // Save immediately
                 saveToStorage();
@@ -3159,6 +3297,8 @@
                 const totalBeds = calculateTotalBeds(row);
                 const leasedBeds = calculateLeasedBeds(row);
                 const hasOverride = row.override !== '' && row.override !== null && row.override !== undefined;
+                const unitsEditedClass = wasEditedThisWeek(`row:${row.id}:units`) ? 'edited-this-week' : '';
+                const overrideEditedClass = wasEditedThisWeek(`row:${row.id}:override`) ? 'edited-this-week' : '';
 
                 return `
                     <tr class="${usesMarketAvg && !hasOverride ? 'uses-market-avg' : ''}">
@@ -3181,7 +3321,7 @@
                             </select>
                         </td>
                         <td class="col-units">
-                            <input type="number" value="${row.units || ''}" 
+                            <input type="number" class="${unitsEditedClass}" value="${row.units || ''}" 
                                 onchange="updateRow(${row.id}, 'units', this.value)"
                                 placeholder="0" min="0" style="text-align: center;">
                         </td>
@@ -3196,7 +3336,7 @@
                             ${totalBeds !== null ? totalBeds : '-'}
                         </td>
                         <td class="col-override">
-                            <input type="number" value="${row.override || ''}" 
+                            <input type="number" class="${overrideEditedClass}" value="${row.override || ''}" 
                                 onchange="updateRow(${row.id}, 'override', this.value)"
                                 placeholder="-" min="0" style="text-align: center;">
                         </td>
